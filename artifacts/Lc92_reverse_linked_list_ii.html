@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LeetCode 92 — Reverse Linked List II</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0d1117;color:#c9d1d9;min-height:100vh;display:flex;flex-direction:column;}
+
+/* ── Header ── */
+.header{background:linear-gradient(135deg,#161b22,#21262d);padding:18px 28px;border-bottom:1px solid #30363d;display:flex;align-items:center;justify-content:space-between;}
+.header h1{font-size:20px;color:#58a6ff;font-weight:700;}
+.badges{display:flex;gap:8px;}
+.badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.b-med{background:#3d2b00;color:#ffa657;}
+.b-time{background:#0d2b0d;color:#56d364;}
+.b-space{background:#0c2233;color:#58a6ff;}
+
+/* ── Progress ── */
+.progress{height:3px;background:#21262d;}
+.progress-fill{height:100%;background:#1f6feb;transition:width .4s ease;}
+
+/* ── Main grid ── */
+.main{display:grid;grid-template-columns:1fr 1fr;flex:1;overflow:hidden;}
+.panel{padding:20px;overflow-y:auto;border-right:1px solid #21262d;}
+.panel-title{font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:16px;}
+
+/* ── Linked list visualization ── */
+.list-section{margin-bottom:24px;}
+.list-label{font-size:12px;color:#6e7681;margin-bottom:10px;font-style:italic;}
+.linked-list{display:flex;align-items:flex-end;flex-wrap:wrap;gap:0;min-height:80px;}
+.node-col{display:flex;flex-direction:column;align-items:center;gap:5px;}
+.node-label-row{height:22px;display:flex;align-items:center;justify-content:center;}
+.ptr-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;white-space:nowrap;}
+.ptr-tag.prev{background:#da3633;color:#fff;}
+.ptr-tag.curr{background:#238636;color:#fff;}
+.ptr-tag.next{background:#1f6feb;color:#fff;}
+.node-box{width:52px;height:52px;border:2px solid #30363d;border-radius:8px;background:#161b22;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;transition:all .35s ease;position:relative;}
+.node-box.t-dummy{background:#0d1117;border-color:#21262d;color:#484f58;font-size:13px;}
+.node-box.t-prev{border-color:#da3633;background:#2d1317;box-shadow:0 0 14px rgba(218,54,51,.35);}
+.node-box.t-curr{border-color:#238636;background:#12261e;box-shadow:0 0 14px rgba(35,134,54,.35);}
+.node-box.t-next{border-color:#1f6feb;background:#0c1f3d;box-shadow:0 0 14px rgba(31,111,235,.35);}
+.node-box.t-result{border-color:#8957e5;background:#1b1327;box-shadow:0 0 14px rgba(137,87,229,.35);}
+.arrow-col{display:flex;align-items:flex-end;padding-bottom:14px;font-size:20px;color:#484f58;margin:0 2px;}
+.null-marker{display:flex;align-items:flex-end;padding-bottom:16px;font-size:13px;color:#484f58;margin-left:4px;}
+.detached-section{margin-top:10px;padding:10px 14px;border:1px dashed #30363d;border-radius:6px;display:inline-flex;align-items:center;gap:10px;}
+.detached-label{font-size:11px;color:#da3633;}
+.phase-pill{display:inline-block;padding:4px 12px;background:#161b22;border:1px solid #30363d;border-radius:16px;font-size:12px;color:#8b949e;margin-bottom:14px;}
+
+/* ── Legend ── */
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;padding-top:16px;border-top:1px solid #21262d;}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:#8b949e;}
+.legend-dot{width:12px;height:12px;border-radius:3px;}
+
+/* ── Code panel ── */
+.code-block{background:#0a0e13;border:1px solid #21262d;border-radius:8px;padding:14px;font-family:'Cascadia Code','Consolas',monospace;font-size:13px;line-height:2;}
+.code-line{padding:1px 8px;border-radius:4px;border-left:3px solid transparent;white-space:pre;transition:all .3s ease;}
+.code-line.active{background:rgba(210,168,255,.1);border-left-color:#d2a8ff;}
+.kw{color:#ff7b72;}.fn{color:#d2a8ff;}.cm{color:#6e7681;font-style:italic;}.nu{color:#f78166;}.var{color:#79c0ff;}
+
+/* ── Variables ── */
+.vars-section{margin-top:20px;}
+.vars-grid{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;align-items:center;margin-top:10px;}
+.var-name{font-family:monospace;color:#79c0ff;font-size:13px;}
+.var-val{font-family:monospace;font-size:12px;background:#0a0e13;border:1px solid #21262d;padding:3px 10px;border-radius:4px;color:#a5d6ff;}
+.var-val.null-val{color:#484f58;}
+
+/* ── Bottom ── */
+.bottom{border-top:1px solid #21262d;padding:14px 24px;display:flex;align-items:center;gap:14px;}
+.explain-box{flex:1;background:#161b22;border:1px solid #30363d;border-left:3px solid #58a6ff;border-radius:4px;padding:12px 16px;font-size:13px;line-height:1.7;color:#c9d1d9;min-height:56px;}
+.step-num{font-size:12px;color:#6e7681;white-space:nowrap;}
+.btn{padding:8px 20px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700;transition:all .2s;}
+.btn:disabled{opacity:.3;cursor:not-allowed;}
+.btn-prev{background:#21262d;color:#c9d1d9;border:1px solid #30363d;}
+.btn-prev:not(:disabled):hover{background:#30363d;}
+.btn-next{background:#238636;color:#fff;}
+.btn-next:not(:disabled):hover{background:#2ea043;}
+
+/* keyboard hint */
+.key-hint{font-size:11px;color:#484f58;text-align:center;padding:4px;border-top:1px solid #21262d;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>LeetCode 92 &mdash; Reverse Linked List II</h1>
+  <div class="badges">
+    <span class="badge b-med">Medium</span>
+    <span class="badge b-time">⏱ O(n)</span>
+    <span class="badge b-space">💾 O(1)</span>
+  </div>
+</div>
+
+<div class="progress"><div class="progress-fill" id="prog"></div></div>
+
+<div class="main">
+
+  <!-- LEFT: Visualization -->
+  <div class="panel">
+    <div class="panel-title">Visualization — Input: [1,2,3,4,5], left=2, right=4</div>
+    <div id="vizContent"></div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#da3633;"></div> prev pointer</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#238636;"></div> curr pointer</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#1f6feb;"></div> next_node pointer</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#8957e5;"></div> final result</div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Code + Variables -->
+  <div class="panel">
+    <div class="panel-title">Code</div>
+    <div class="code-block" id="codeBlock">
+      <div class="code-line" data-ln="0"><span class="kw">def</span> <span class="fn">reverseBetween</span>(head, left, right):</div>
+      <div class="code-line" data-ln="1">    <span class="var">dummy</span> = ListNode(<span class="nu">0</span>)</div>
+      <div class="code-line" data-ln="2">    <span class="var">dummy</span>.next = head</div>
+      <div class="code-line" data-ln="3">    <span class="var">prev</span> = <span class="var">dummy</span></div>
+      <div class="code-line" data-ln="4"> </div>
+      <div class="code-line" data-ln="5">    <span class="cm"># Move prev to node before position left</span></div>
+      <div class="code-line" data-ln="6">    <span class="kw">for</span> _ <span class="kw">in</span> range(left - <span class="nu">1</span>):</div>
+      <div class="code-line" data-ln="7">        <span class="var">prev</span> = <span class="var">prev</span>.next</div>
+      <div class="code-line" data-ln="8"> </div>
+      <div class="code-line" data-ln="9">    <span class="var">curr</span> = <span class="var">prev</span>.next</div>
+      <div class="code-line" data-ln="10"> </div>
+      <div class="code-line" data-ln="11">    <span class="cm"># Reverse (right − left) times</span></div>
+      <div class="code-line" data-ln="12">    <span class="kw">for</span> _ <span class="kw">in</span> range(right - left):</div>
+      <div class="code-line" data-ln="13">        <span class="var">next_node</span> = <span class="var">curr</span>.next</div>
+      <div class="code-line" data-ln="14">        <span class="var">curr</span>.next = <span class="var">next_node</span>.next</div>
+      <div class="code-line" data-ln="15">        <span class="var">next_node</span>.next = <span class="var">prev</span>.next</div>
+      <div class="code-line" data-ln="16">        <span class="var">prev</span>.next = <span class="var">next_node</span></div>
+      <div class="code-line" data-ln="17"> </div>
+      <div class="code-line" data-ln="18">    <span class="kw">return</span> <span class="var">dummy</span>.next</div>
+    </div>
+
+    <div class="vars-section">
+      <div class="panel-title">Variables</div>
+      <div class="vars-grid" id="varsGrid"></div>
+    </div>
+  </div>
+</div>
+
+<div class="bottom">
+  <button class="btn btn-prev" id="btnP" onclick="go(-1)">← Prev</button>
+  <div class="explain-box" id="explain"></div>
+  <span class="step-num" id="stepNum"></span>
+  <button class="btn btn-next" id="btnN" onclick="go(1)">Next →</button>
+</div>
+<div class="key-hint">Keyboard: ← → arrow keys to navigate</div>
+
+<script>
+// ─── Step Data ───────────────────────────────────────────────────────────────
+// Each node: { v: value, t: type-class, p: [pointer labels] }
+// types: 'normal' | 'dummy' | 't-prev' | 't-curr' | 't-next' | 't-result'
+
+const STEPS = [
+  {
+    phase: "Problem Setup",
+    ln: 0,
+    list: { label: "Input: head = [1,2,3,4,5]", nodes: [
+      {v:1,t:'normal'},{v:2,t:'normal'},{v:3,t:'normal'},{v:4,t:'normal'},{v:5,t:'normal'}
+    ]},
+    vars: {prev:'null', curr:'null', next_node:'null'},
+    explain: "Reverse nodes at positions left=2 through right=4 in [1→2→3→4→5]. Strategy: use a dummy node as sentinel and the insert-to-front technique — repeatedly grab the node after curr and move it right after prev."
+  },
+  {
+    phase: "Create dummy node",
+    ln: 1,
+    list: { label: "dummy = ListNode(0), dummy.next = head", nodes: [
+      {v:'D',t:'dummy'},{v:1,t:'normal'},{v:2,t:'normal'},{v:3,t:'normal'},{v:4,t:'normal'},{v:5,t:'normal'}
+    ]},
+    vars: {prev:'dummy(D)', curr:'null', next_node:'null'},
+    explain: "Create dummy node (value 0) and point it to head. This sentinel node lets us handle left=1 without any special-casing — prev can always start at dummy."
+  },
+  {
+    phase: "prev = dummy",
+    ln: 3,
+    list: { label: "prev starts at dummy", nodes: [
+      {v:'D',t:'t-prev',p:['prev']},{v:1,t:'normal'},{v:2,t:'normal'},{v:3,t:'normal'},{v:4,t:'normal'},{v:5,t:'normal'}
+    ]},
+    vars: {prev:'dummy(D)', curr:'null', next_node:'null'},
+    explain: "Initialize prev = dummy. We'll advance it (left−1) = 1 time so it lands on the node just before position left=2."
+  },
+  {
+    phase: "Advance prev (1 step)",
+    ln: 7,
+    list: { label: "After: for _ in range(left-1): prev = prev.next", nodes: [
+      {v:'D',t:'dummy'},{v:1,t:'t-prev',p:['prev']},{v:2,t:'normal'},{v:3,t:'normal'},{v:4,t:'normal'},{v:5,t:'normal'}
+    ]},
+    vars: {prev:'node(1)', curr:'null', next_node:'null'},
+    explain: "Moved prev forward 1 time. prev is now node(1), the node just before position left=2. prev will NOT move again — it is the fixed anchor for all insertions."
+  },
+  {
+    phase: "curr = prev.next",
+    ln: 9,
+    list: { label: "curr = node at position left = node(2)", nodes: [
+      {v:'D',t:'dummy'},{v:1,t:'t-prev',p:['prev']},{v:2,t:'t-curr',p:['curr']},{v:3,t:'normal'},{v:4,t:'normal'},{v:5,t:'normal'}
+    ]},
+    vars: {prev:'node(1)', curr:'node(2)', next_node:'null'},
+    explain: "curr = prev.next = node(2). curr is the tail of the reversed section — it stays fixed while nodes get inserted in front of it. After all reversals, curr will be the last node in the reversed range."
+  },
+  {
+    phase: "Iter 1 — extract next_node",
+    ln: 13,
+    list: { label: "next_node = curr.next = node(3)", nodes: [
+      {v:'D',t:'dummy'},{v:1,t:'t-prev',p:['prev']},{v:2,t:'t-curr',p:['curr']},{v:3,t:'t-next',p:['next_node']},{v:4,t:'normal'},{v:5,t:'normal'}
+    ]},
+    vars: {prev:'node(1)', curr:'node(2)', next_node:'node(3)'},
+    explain: "Iteration 1 of 2 (right−left = 4−2 = 2). Extract next_node = curr.next = node(3). This is the node we'll move to just after prev."
+  },
+  {
+    phase: "Iter 1 — curr.next = next_node.next",
+    ln: 14,
+    list: { label: "curr.next skips over node(3) → points to node(4)", nodes: [
+      {v:'D',t:'dummy'},{v:1,t:'t-prev',p:['prev']},{v:2,t:'t-curr',p:['curr']},{v:4,t:'normal'},{v:5,t:'normal'}
+    ], detached: [{v:3,t:'t-next',p:['next_node']}]},
+    vars: {prev:'node(1)', curr:'node(2)', next_node:'node(3)'},
+    explain: "curr.next = next_node.next = node(4). Node(3) is now 'detached' — curr skips directly to node(4). List connections: D→1→2→4→5. Node(3) is floating, held by next_node."
+  },
+  {
+    phase: "Iter 1 — insert next_node after prev",
+    ln: 16,
+    list: { label: "After lines 15–16: D→1→3→2→4→5", nodes: [
+      {v:'D',t:'dummy'},{v:1,t:'t-prev',p:['prev']},{v:3,t:'t-next',p:['next_node']},{v:2,t:'t-curr',p:['curr']},{v:4,t:'normal'},{v:5,t:'normal'}
+    ]},
+    vars: {prev:'node(1)', curr:'node(2)', next_node:'node(3)'},
+    explain: "next_node.next = prev.next = node(2). prev.next = next_node = node(3). Node(3) is now inserted right after prev. List: D→1→3→2→4→5. One node reversed!"
+  },
+  {
+    phase: "Iter 2 — extract next_node",
+    ln: 13,
+    list: { label: "next_node = curr.next = node(4)", nodes: [
+      {v:'D',t:'dummy'},{v:1,t:'t-prev',p:['prev']},{v:3,t:'normal'},{v:2,t:'t-curr',p:['curr']},{v:4,t:'t-next',p:['next_node']},{v:5,t:'normal'}
+    ]},
+    vars: {prev:'node(1)', curr:'node(2)', next_node:'node(4)'},
+    explain: "Iteration 2 of 2. curr is still node(2) — it never moves. next_node = curr.next = node(4). We'll move node(4) to right after prev."
+  },
+  {
+    phase: "Iter 2 — curr.next = next_node.next",
+    ln: 14,
+    list: { label: "curr.next skips over node(4) → points to node(5)", nodes: [
+      {v:'D',t:'dummy'},{v:1,t:'t-prev',p:['prev']},{v:3,t:'normal'},{v:2,t:'t-curr',p:['curr']},{v:5,t:'normal'}
+    ], detached: [{v:4,t:'t-next',p:['next_node']}]},
+    vars: {prev:'node(1)', curr:'node(2)', next_node:'node(4)'},
+    explain: "curr.next = next_node.next = node(5). Node(4) is detached. List so far: D→1→3→2→5. Node(4) is floating, held by next_node."
+  },
+  {
+    phase: "Iter 2 — insert next_node after prev",
+    ln: 16,
+    list: { label: "After lines 15–16: D→1→4→3→2→5", nodes: [
+      {v:'D',t:'dummy'},{v:1,t:'t-prev',p:['prev']},{v:4,t:'t-next',p:['next_node']},{v:3,t:'normal'},{v:2,t:'t-curr',p:['curr']},{v:5,t:'normal'}
+    ]},
+    vars: {prev:'node(1)', curr:'node(2)', next_node:'node(4)'},
+    explain: "next_node(4).next = prev.next = node(3). prev.next = node(4). Node(4) inserted after prev. List: D→1→4→3→2→5. Both iterations done — sublist is fully reversed!"
+  },
+  {
+    phase: "Return dummy.next",
+    ln: 18,
+    list: { label: "✓ Result: [1 → 4 → 3 → 2 → 5]", nodes: [
+      {v:1,t:'t-result'},{v:4,t:'t-result'},{v:3,t:'t-result'},{v:2,t:'t-result'},{v:5,t:'t-result'}
+    ]},
+    vars: {prev:'node(1)', curr:'node(2)', next_node:'node(4)'},
+    explain: "Return dummy.next = node(1). Positions 2–4 are reversed. Input [1,2,3,4,5] → Output [1,4,3,2,5]. Total: 1 pass, O(n) time, O(1) space. ✓"
+  }
+];
+
+// ─── Rendering ───────────────────────────────────────────────────────────────
+let cur = 0;
+
+function renderNode(n) {
+  const ptrs = (n.p||[]).map(lbl => {
+    const cls = lbl === 'prev' ? 'prev' : lbl === 'curr' ? 'curr' : 'next';
+    return `<span class="ptr-tag ${cls}">${lbl}</span>`;
+  }).join('');
+  const ptrRow = `<div class="node-label-row">${ptrs}</div>`;
+  const typeClass = (n.t === 'normal' || !n.t) ? '' : n.t;
+  return `<div class="node-col">${ptrRow}<div class="node-box ${typeClass === 'dummy' ? 't-dummy' : typeClass}">${n.v}</div></div>`;
+}
+
+function renderList(ld) {
+  let html = `<div class="list-label">${ld.label}</div><div class="linked-list">`;
+  ld.nodes.forEach((n, i) => {
+    html += renderNode(n);
+    if (i < ld.nodes.length - 1) html += `<div class="arrow-col">→</div>`;
+  });
+  html += `<div class="null-marker">→ null</div></div>`;
+  if (ld.detached && ld.detached.length) {
+    html += `<div class="detached-section"><span class="detached-label">detached:</span>`;
+    ld.detached.forEach(n => { html += renderNode(n); });
+    html += `</div>`;
+  }
+  return html;
+}
+
+function render() {
+  const s = STEPS[cur];
+
+  // Phase pill + list
+  document.getElementById('vizContent').innerHTML =
+    `<div class="phase-pill">${s.phase}</div>` + renderList(s.list);
+
+  // Code highlight
+  document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active'));
+  const al = document.querySelector(`.code-line[data-ln="${s.ln}"]`);
+  if (al) al.classList.add('active');
+
+  // Variables
+  let vh = '';
+  for (const [k,v] of Object.entries(s.vars))
+    vh += `<span class="var-name">${k}</span><span class="var-val${v==='null'?' null-val':''}">${v}</span>`;
+  document.getElementById('varsGrid').innerHTML = vh;
+
+  // Explanation
+  document.getElementById('explain').textContent = s.explain;
+
+  // Step counter & progress
+  document.getElementById('stepNum').textContent = `Step ${cur+1} / ${STEPS.length}`;
+  document.getElementById('prog').style.width = `${((cur+1)/STEPS.length)*100}%`;
+
+  // Buttons
+  document.getElementById('btnP').disabled = cur === 0;
+  document.getElementById('btnN').disabled = cur === STEPS.length - 1;
+}
+
+function go(dir) {
+  const next = cur + dir;
+  if (next >= 0 && next < STEPS.length) { cur = next; render(); }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1);
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   go(-1);
+});
+
+render();
+</script>
+</body>
+</html>
