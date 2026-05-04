@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LeetCode 21 — Merge Two Sorted Lists (DLL)</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0d1117;color:#c9d1d9;min-height:100vh;display:flex;flex-direction:column;}
+.header{background:linear-gradient(135deg,#161b22,#21262d);padding:18px 28px;border-bottom:1px solid #30363d;display:flex;align-items:center;justify-content:space-between;}
+.header h1{font-size:18px;color:#58a6ff;font-weight:700;}
+.badges{display:flex;gap:8px;}
+.badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.b-easy{background:#0d2b0d;color:#56d364;}
+.b-time{background:#0d2b0d;color:#56d364;}
+.b-space{background:#0c2233;color:#58a6ff;}
+.b-dll{background:#1b1327;color:#d2a8ff;border:1px solid #8957e5;}
+.progress{height:3px;background:#21262d;}
+.progress-fill{height:100%;background:#56d364;transition:width .4s ease;}
+.main{display:grid;grid-template-columns:1fr 1fr;flex:1;overflow:hidden;}
+.panel{padding:20px;overflow-y:auto;border-right:1px solid #21262d;}
+.panel-title{font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:16px;}
+.phase-pill{display:inline-block;padding:4px 12px;background:#161b22;border:1px solid #30363d;border-radius:16px;font-size:12px;color:#8b949e;margin-bottom:10px;}
+.list-label{font-size:12px;color:#6e7681;margin-bottom:8px;font-style:italic;}
+.dll-list{display:flex;align-items:center;flex-wrap:wrap;margin-bottom:4px;}
+.list-group{margin-bottom:12px;}
+.list-tag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-bottom:6px;display:inline-block;}
+.tag-l1{background:#0c1f3d;color:#58a6ff;}
+.tag-l2{background:#1b1327;color:#d2a8ff;}
+.tag-res{background:#0d2b0d;color:#56d364;}
+.node-col{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.ptr-row{height:20px;display:flex;align-items:center;justify-content:center;gap:3px;}
+.ptr-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;white-space:nowrap;}
+.ptr-tag.curr{background:#238636;color:#fff;}
+.ptr-tag.l1{background:#1f6feb;color:#fff;}
+.ptr-tag.l2{background:#6e40c9;color:#fff;}
+.node-box{width:48px;height:48px;border:2px solid #30363d;border-radius:8px;background:#161b22;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;transition:all .35s ease;}
+.node-box.t-dummy{background:#0d1117;border-color:#21262d;color:#484f58;font-size:12px;}
+.node-box.t-curr{border-color:#238636;background:#12261e;box-shadow:0 0 12px rgba(35,134,54,.3);}
+.node-box.t-l1{border-color:#1f6feb;background:#0c1f3d;box-shadow:0 0 12px rgba(31,111,235,.3);}
+.node-box.t-l2{border-color:#8957e5;background:#1b1327;box-shadow:0 0 12px rgba(137,87,229,.3);}
+.node-box.t-chosen{border-color:#56d364;background:#0d2b0d;box-shadow:0 0 12px rgba(86,211,100,.3);}
+.dll-conn{display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 1px;}
+.conn-fwd{display:flex;align-items:center;gap:2px;margin-bottom:2px;}
+.conn-bwd{display:flex;align-items:center;gap:2px;margin-top:2px;}
+.conn-lbl{font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;white-space:nowrap;}
+.lbl-fwd{background:#0c1f3d;color:#58a6ff;border:1px solid #1f6feb;}
+.lbl-bwd{background:#2d1317;color:#da3633;border:1px solid #da3633;}
+.lbl-hot{background:#2d1a00;color:#ffa657;border:1px solid #ffa657;}
+.arr-r{font-size:15px;color:#484f58;line-height:1;}
+.arr-l{font-size:15px;color:#484f58;line-height:1;}
+.arr-r.hot,.arr-l.hot{color:#ffa657;font-weight:900;}
+.null-end{display:flex;flex-direction:column;justify-content:center;font-size:11px;color:#484f58;margin-left:2px;gap:5px;}
+.changes-panel{margin-top:14px;border:1px solid #ffa657;border-radius:8px;overflow:hidden;}
+.changes-hdr{background:#2d1a00;padding:6px 14px;font-size:10px;font-weight:700;color:#ffa657;text-transform:uppercase;letter-spacing:1px;}
+.change-row{padding:9px 14px;border-bottom:1px solid #21262d;font-size:12px;line-height:1.9;}
+.change-row:last-child{border-bottom:none;}
+.change-code{font-family:'Cascadia Code',Consolas,monospace;display:block;background:#0a0e13;padding:3px 10px;border-radius:4px;color:#d2a8ff;margin-bottom:5px;font-size:12px;}
+.was{color:#8b949e;}.was span{font-family:monospace;color:#da3633;text-decoration:line-through;}
+.now{color:#c9d1d9;}.now span{font-family:monospace;color:#56d364;font-weight:700;}
+.why{margin-top:4px;font-size:11px;color:#6e7681;font-style:italic;line-height:1.6;}
+.no-change{margin-top:12px;padding:7px 14px;border:1px solid #21262d;border-radius:6px;font-size:11px;color:#484f58;font-style:italic;}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid #21262d;}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#8b949e;}
+.legend-dot{width:11px;height:11px;border-radius:3px;}
+.code-block{background:#0a0e13;border:1px solid #21262d;border-radius:8px;padding:12px;font-family:'Cascadia Code',Consolas,monospace;font-size:12px;line-height:2.1;}
+.code-line{padding:1px 8px;border-radius:4px;border-left:3px solid transparent;white-space:pre;transition:all .3s;}
+.code-line.active{background:rgba(86,211,100,.08);border-left-color:#56d364;}
+.kw{color:#ff7b72;}.fn{color:#d2a8ff;}.cm{color:#6e7681;font-style:italic;}.nu{color:#f78166;}.var{color:#79c0ff;}
+.vars-section{margin-top:18px;}
+.vars-grid{display:grid;grid-template-columns:auto 1fr;gap:7px 14px;align-items:center;margin-top:9px;}
+.var-name{font-family:monospace;color:#79c0ff;font-size:12px;}
+.var-val{font-family:monospace;font-size:11px;background:#0a0e13;border:1px solid #21262d;padding:3px 8px;border-radius:4px;color:#a5d6ff;}
+.var-val.null-val{color:#484f58;}
+.bottom{border-top:1px solid #21262d;padding:12px 22px;display:flex;align-items:center;gap:12px;}
+.explain-box{flex:1;background:#161b22;border:1px solid #30363d;border-left:3px solid #56d364;border-radius:4px;padding:11px 14px;font-size:13px;line-height:1.75;color:#c9d1d9;min-height:54px;}
+.step-num{font-size:12px;color:#6e7681;white-space:nowrap;}
+.btn{padding:7px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700;transition:all .2s;}
+.btn:disabled{opacity:.3;cursor:not-allowed;}
+.btn-prev{background:#21262d;color:#c9d1d9;border:1px solid #30363d;}
+.btn-prev:not(:disabled):hover{background:#30363d;}
+.btn-next{background:#238636;color:#fff;}
+.btn-next:not(:disabled):hover{background:#2ea043;}
+.key-hint{font-size:11px;color:#484f58;text-align:center;padding:4px;border-top:1px solid #21262d;}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>LeetCode 21 — Merge Two Sorted Lists (Doubly Linked List)</h1>
+  <div class="badges">
+    <span class="badge b-easy">Easy</span>
+    <span class="badge b-time">⏱ O(m+n)</span>
+    <span class="badge b-space">💾 O(1)</span>
+    <span class="badge b-dll">⇄ DLL</span>
+  </div>
+</div>
+<div class="progress"><div class="progress-fill" id="prog"></div></div>
+<div class="main">
+  <div class="panel">
+    <div class="panel-title">Visualization — list1:[1⇄2⇄4]  list2:[1⇄3⇄4]</div>
+    <div id="vizContent"></div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#1f6feb;"></div>list1 pointer</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#8957e5;"></div>list2 pointer</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#238636;"></div>curr (result tail)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#56d364;"></div>chosen/appended</div>
+      <div class="legend-item" style="margin-top:4px;width:100%;color:#ffa657;font-size:11px;">↷ orange = arrow just changed   → .next   ← .prev</div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">Code</div>
+    <div class="code-block">
+      <div class="code-line" data-ln="0"><span class="kw">def</span> <span class="fn">mergeTwoLists</span>(list1, list2):</div>
+      <div class="code-line" data-ln="1">    <span class="var">dummy</span> = DLLNode(<span class="nu">0</span>); <span class="var">curr</span> = <span class="var">dummy</span></div>
+      <div class="code-line" data-ln="2"> </div>
+      <div class="code-line" data-ln="3">    <span class="kw">while</span> list1 <span class="kw">and</span> list2:</div>
+      <div class="code-line" data-ln="4">        <span class="kw">if</span> list1.val &lt;= list2.val:</div>
+      <div class="code-line" data-ln="5">            <span class="var">curr</span>.next = list1</div>
+      <div class="code-line" data-ln="6">            list1.prev = <span class="var">curr</span>   <span class="cm"># ← DLL step</span></div>
+      <div class="code-line" data-ln="7">            list1 = list1.next</div>
+      <div class="code-line" data-ln="8">        <span class="kw">else</span>:</div>
+      <div class="code-line" data-ln="9">            <span class="var">curr</span>.next = list2</div>
+      <div class="code-line" data-ln="10">            list2.prev = <span class="var">curr</span>   <span class="cm"># ← DLL step</span></div>
+      <div class="code-line" data-ln="11">            list2 = list2.next</div>
+      <div class="code-line" data-ln="12">        <span class="var">curr</span> = <span class="var">curr</span>.next</div>
+      <div class="code-line" data-ln="13">    <span class="var">remaining</span> = list1 <span class="kw">or</span> list2</div>
+      <div class="code-line" data-ln="14">    <span class="var">curr</span>.next = <span class="var">remaining</span></div>
+      <div class="code-line" data-ln="15">    <span class="kw">if</span> <span class="var">remaining</span>: <span class="var">remaining</span>.prev = <span class="var">curr</span></div>
+      <div class="code-line" data-ln="16">    <span class="var">dummy</span>.next.prev = <span class="kw">None</span></div>
+      <div class="code-line" data-ln="17">    <span class="kw">return</span> <span class="var">dummy</span>.next</div>
+    </div>
+    <div class="vars-section">
+      <div class="panel-title">Variables</div>
+      <div class="vars-grid" id="varsGrid"></div>
+    </div>
+  </div>
+</div>
+<div class="bottom">
+  <button class="btn btn-prev" id="btnP" onclick="go(-1)">← Prev</button>
+  <div class="explain-box" id="explain"></div>
+  <span class="step-num" id="stepNum"></span>
+  <button class="btn btn-next" id="btnN" onclick="go(1)">Next →</button>
+</div>
+<div class="key-hint">Keyboard: ← → arrow keys to navigate</div>
+
+<script>
+/*  Each step has:
+    resNodes  — the growing result DLL (shown top)
+    l1Nodes   — remaining list1 (shown middle)
+    l2Nodes   — remaining list2 (shown bottom)
+    resArrs   — connectors for result list
+*/
+const STEPS=[
+  {
+    phase:"Step 0 — Problem Setup", ln:0,
+    resNodes:[], resArrs:[],
+    l1Nodes:[{v:1,t:'t-l1'},{v:2,t:'t-l1'},{v:4,t:'t-l1'}],
+    l2Nodes:[{v:1,t:'t-l2'},{v:3,t:'t-l2'},{v:4,t:'t-l2'}],
+    vars:{curr:'—',list1:'node(1)',list2:'node(1)'},
+    changes:[],
+    explain:"Both lists are sorted. We'll merge them into one sorted DLL. Key DLL rule: every time we do curr.next = node, we MUST also do node.prev = curr. That backward link is what makes the result a valid DLL. Watch for two arrows (→ and ←) between every merged pair."
+  },
+  {
+    phase:"Step 1 — Create dummy, curr = dummy  (line 1)", ln:1,
+    resNodes:[{v:'D',t:'t-dummy',p:['curr']}], resArrs:[],
+    l1Nodes:[{v:1,t:'t-l1',p:['list1']},{v:2,t:'t-l1'},{v:4,t:'t-l1'}],
+    l2Nodes:[{v:1,t:'t-l2',p:['list2']},{v:3,t:'t-l2'},{v:4,t:'t-l2'}],
+    vars:{curr:'dummy(D)',list1:'node(1) l1',list2:'node(1) l2'},
+    changes:[{code:'dummy = DLLNode(0)   curr = dummy',was:'curr → nothing',now:'curr → dummy(D)',why:'Dummy is our scaffold head. curr tracks the tail of the built result. Every node we attach goes after curr, then curr advances.'}],
+    explain:"Dummy created, curr on it. list1 and list2 both point to their heads. Now we compare: list1.val=1 vs list2.val=1."
+  },
+  {
+    phase:"Step 2 — list1.val(1) ≤ list2.val(1) → attach list1  (lines 5–6)", ln:6,
+    resNodes:[{v:'D',t:'t-dummy'},{v:1,t:'t-chosen',p:['curr']}], resArrs:[{fwd:{lbl:'curr.next ↷',hot:true},bwd:{lbl:'1.prev ↷',hot:true}}],
+    l1Nodes:[{v:2,t:'t-l1',p:['list1']},{v:4,t:'t-l1'}],
+    l2Nodes:[{v:1,t:'t-l2',p:['list2']},{v:3,t:'t-l2'},{v:4,t:'t-l2'}],
+    vars:{curr:'node(1-l1)',list1:'node(2)',list2:'node(1) l2'},
+    changes:[
+      {code:'curr.next = list1   list1.prev = curr',was:'curr.next → null  |  list1(1).prev → null',now:'curr.next → node(1-l1)  |  node(1-l1).prev → dummy',why:'Two arrows created at once — the forward link and the backward link. This is the DLL discipline: never set .next without also setting .prev. The ← arrow is new vs SLL merge.'}
+    ],
+    explain:"ARROW CHANGED ↷ (both directions): curr.next now points forward to list1's node(1). And list1's node(1).prev now points backward to dummy. Two arrows for one attachment — that's DLL merge."
+  },
+  {
+    phase:"Step 3 — curr = curr.next  (line 12)", ln:12,
+    resNodes:[{v:'D',t:'t-dummy'},{v:1,t:'t-l1',p:['curr']}], resArrs:[{fwd:{lbl:'curr.next→',hot:false},bwd:{lbl:'1.prev',hot:false}}],
+    l1Nodes:[{v:2,t:'t-l1',p:['list1']},{v:4,t:'t-l1'}],
+    l2Nodes:[{v:1,t:'t-l2',p:['list2']},{v:3,t:'t-l2'},{v:4,t:'t-l2'}],
+    vars:{curr:'node(1-l1)',list1:'node(2)',list2:'node(1) l2'},
+    changes:[{code:'curr = curr.next',was:'curr → dummy',now:'curr → node(1-l1)',why:'curr advances to the last node in the result. It always sits at the tail — the next attachment goes after it.'}],
+    explain:"curr advanced to the newly attached node(1). Compare again: list1.val=2 vs list2.val=1. list2 wins this round."
+  },
+  {
+    phase:"Step 4 — list2.val(1) < list1.val(2) → attach list2  (lines 9–10)", ln:10,
+    resNodes:[{v:'D',t:'t-dummy'},{v:1,t:'t-l1'},{v:1,t:'t-chosen',p:['curr']}],
+    resArrs:[{fwd:{lbl:'',hot:false},bwd:{lbl:'',hot:false}},{fwd:{lbl:'curr.next ↷',hot:true},bwd:{lbl:'1-l2.prev ↷',hot:true}}],
+    l1Nodes:[{v:2,t:'t-l1',p:['list1']},{v:4,t:'t-l1'}],
+    l2Nodes:[{v:3,t:'t-l2',p:['list2']},{v:4,t:'t-l2'}],
+    vars:{curr:'node(1-l2)',list1:'node(2)',list2:'node(3)'},
+    changes:[{code:'curr.next = list2   list2.prev = curr',was:'curr.next → null  |  list2(1).prev → (list2 internal)',now:'curr.next → node(1-l2)  |  node(1-l2).prev → node(1-l1)',why:'Two more arrows. The result now has D⇄1⇄1. Every adjacent pair has both → and ← arrows — a valid DLL at every step.'}],
+    explain:"ARROW CHANGED ↷: list2's node(1) attached after curr. Forward link AND backward link created. Result is now D⇄1(l1)⇄1(l2). curr sits at the tail."
+  },
+  {
+    phase:"Step 5 — Attach list1(2) then list2(3) then list1(4)", ln:12,
+    resNodes:[{v:'D',t:'t-dummy'},{v:1,t:''},{v:1,t:''},{v:2,t:''},{v:3,t:''},{v:4,t:'t-chosen',p:['curr']}],
+    resArrs:[{fwd:{lbl:'',hot:false},bwd:{lbl:'',hot:false}},{fwd:{lbl:'',hot:false},bwd:{lbl:'',hot:false}},{fwd:{lbl:'↷',hot:true},bwd:{lbl:'↷',hot:true}},{fwd:{lbl:'↷',hot:true},bwd:{lbl:'↷',hot:true}},{fwd:{lbl:'↷',hot:true},bwd:{lbl:'↷',hot:true}}],
+    l1Nodes:[],
+    l2Nodes:[{v:4,t:'t-l2',p:['list2']}],
+    vars:{curr:'node(4-l1)',list1:'null',list2:'node(4-l2)'},
+    changes:[{code:'(3 iterations of loop — each attaches one node with .next + .prev)',was:'result had D⇄1⇄1',now:'result has D⇄1⇄1⇄2⇄3⇄4',why:'Each iteration: compare → pick smaller → set curr.next AND chosen.prev → advance curr. The DLL rule is applied identically every single time.'}],
+    explain:"Three more iterations completed. Each one created two arrows (→ and ←). list1 is exhausted. list2 has one remaining node (value 4). We exit the while loop and attach the remainder."
+  },
+  {
+    phase:"Step 6 — Attach remaining list2  (lines 13–15)", ln:15,
+    resNodes:[{v:'D',t:'t-dummy'},{v:1,t:''},{v:1,t:''},{v:2,t:''},{v:3,t:''},{v:4,t:''},{v:4,t:'t-chosen'}],
+    resArrs:[null,null,null,null,null,{fwd:{lbl:'curr.next ↷',hot:true},bwd:{lbl:'rem.prev ↷',hot:true}}],
+    l1Nodes:[],
+    l2Nodes:[],
+    vars:{curr:'node(4-l1)',list1:'null',list2:'null (consumed)'},
+    changes:[{code:'curr.next = remaining   remaining.prev = curr',was:'curr.next → null  |  node(4-l2).prev → (internal)',now:'curr.next → node(4-l2)  |  node(4-l2).prev → node(4-l1)',why:'Same two-arrow pattern for the remainder attachment. We always update .prev even for the trailing nodes — they are part of the DLL and must have correct backward links.'}],
+    explain:"ARROW CHANGED ↷: remaining list2 node (value 4) attached. Both → and ← created. The result is now fully merged. One final cleanup: dummy.next.prev should be null (the head has no real predecessor)."
+  },
+  {
+    phase:"Step 7 — dummy.next.prev = None  and  return dummy.next  (lines 16–17)", ln:17,
+    resNodes:[{v:1,t:'t-chosen'},{v:1,t:'t-chosen'},{v:2,t:'t-chosen'},{v:3,t:'t-chosen'},{v:4,t:'t-chosen'},{v:4,t:'t-chosen'}],
+    resArrs:[{fwd:{lbl:'',hot:false},bwd:{lbl:'',hot:false}},{fwd:{lbl:'',hot:false},bwd:{lbl:'',hot:false}},{fwd:{lbl:'',hot:false},bwd:{lbl:'',hot:false}},{fwd:{lbl:'',hot:false},bwd:{lbl:'',hot:false}},{fwd:{lbl:'',hot:false},bwd:{lbl:'',hot:false}}],
+    l1Nodes:[],l2Nodes:[],
+    vars:{curr:'node(4-l1)',list1:'null',list2:'null'},
+    changes:[{code:'dummy.next.prev = None',was:'node(1-l1).prev → dummy',now:'node(1-l1).prev → None',why:'A proper DLL head has no predecessor. dummy was temporarily node(1).prev during construction. We clean it up so the returned list is a valid DLL.'}],
+    explain:"Return dummy.next = node(1). Result: 1⇄1⇄2⇄3⇄4⇄4 — every node has correct .next AND .prev. O(m+n) time, O(1) space. The DLL work: exactly 2 × (m+n) extra .prev assignments compared to SLL merge."
+  }
+];
+
+let cur=0;
+function nodeH(n,small){
+  const sz=small?'48px':'48px';
+  const ptrs=(n.p||[]).map(l=>{
+    const cls=l==='curr'?'curr':l==='list1'?'l1':'l2';
+    return`<span class="ptr-tag ${cls}">${l}</span>`;
+  }).join('');
+  const tc=(!n.t||n.t==='normal')?'':n.t;
+  return`<div class="node-col"><div class="ptr-row">${ptrs}</div><div class="node-box ${tc}">${n.v}</div></div>`;
+}
+function connH(a){
+  if(!a)return`<div class="dll-conn"><div class="conn-fwd"><span class="arr-r">→</span></div><div class="conn-bwd"><span class="arr-l">←</span></div></div>`;
+  const fR=a.fwd&&a.fwd.lbl?`<span class="conn-lbl ${a.fwd.hot?'lbl-hot':'lbl-fwd'}">${a.fwd.lbl}</span><span class="arr-r${a.fwd.hot?' hot':''}">→</span>`:`<span class="arr-r${a.fwd&&a.fwd.hot?' hot':''}">→</span>`;
+  const bR=a.bwd&&a.bwd.lbl?`<span class="arr-l${a.bwd&&a.bwd.hot?' hot':''}">←</span><span class="conn-lbl ${a.bwd.hot?'lbl-hot':'lbl-bwd'}">${a.bwd.lbl}</span>`:`<span class="arr-l${a.bwd&&a.bwd.hot?' hot':''}">←</span>`;
+  return`<div class="dll-conn"><div class="conn-fwd">${fR}</div><div class="conn-bwd">${bR}</div></div>`;
+}
+function listH(nodes,arrs,tag){
+  if(!nodes||!nodes.length)return`<div class="list-group"><span class="list-tag ${tag==='l1'?'tag-l1':tag==='l2'?'tag-l2':'tag-res'}">${tag==='l1'?'list1':tag==='l2'?'list2':'Result'}</span> <span style="font-size:12px;color:#484f58;font-style:italic;">exhausted (null)</span></div>`;
+  let h=`<div class="list-group"><span class="list-tag ${tag==='l1'?'tag-l1':tag==='l2'?'tag-l2':'tag-res'}">${tag==='l1'?'list1':tag==='l2'?'list2':'Result'}</span><div class="dll-list">`;
+  nodes.forEach((n,i)=>{h+=nodeH(n);if(i<nodes.length-1)h+=connH(arrs?arrs[i]:null);});
+  h+=`<div class="null-end"><span>→null</span><span>null←</span></div></div></div>`;
+  return h;
+}
+function changesH(ch){
+  if(!ch||!ch.length)return`<div class="no-change">No pointers changed — reading values only.</div>`;
+  let h=`<div class="changes-panel"><div class="changes-hdr">↷ Arrow changes this step</div>`;
+  ch.forEach(c=>{h+=`<div class="change-row"><code class="change-code">${c.code}</code><div class="was">Before: <span>${c.was}</span></div><div class="now">After:&nbsp; <span>${c.now}</span></div><div class="why">${c.why}</div></div>`;});
+  return h+`</div>`;
+}
+function render(){
+  const s=STEPS[cur];
+  const content=`<div class="phase-pill">${s.phase}</div>`
+    +listH(s.resNodes,s.resArrs,'res')
+    +listH(s.l1Nodes,null,'l1')
+    +listH(s.l2Nodes,null,'l2')
+    +changesH(s.changes);
+  document.getElementById('vizContent').innerHTML=content;
+  document.querySelectorAll('.code-line').forEach(e=>e.classList.remove('active'));
+  const al=document.querySelector(`.code-line[data-ln="${s.ln}"]`);
+  if(al)al.classList.add('active');
+  let vh='';
+  for(const[k,v] of Object.entries(s.vars))vh+=`<span class="var-name">${k}</span><span class="var-val${v==='—'||v==='null'?' null-val':''}">${v}</span>`;
+  document.getElementById('varsGrid').innerHTML=vh;
+  document.getElementById('explain').textContent=s.explain;
+  document.getElementById('stepNum').textContent=`Step ${cur+1} / ${STEPS.length}`;
+  document.getElementById('prog').style.width=`${((cur+1)/STEPS.length)*100}%`;
+  document.getElementById('btnP').disabled=cur===0;
+  document.getElementById('btnN').disabled=cur===STEPS.length-1;
+}
+function go(d){const n=cur+d;if(n>=0&&n<STEPS.length){cur=n;render();}}
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown')go(1);
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp')go(-1);
+});
+render();
+</script>
+</body>
+</html>
