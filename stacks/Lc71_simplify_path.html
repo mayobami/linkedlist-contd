@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LC 71 — Simplify Path</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0d1117; color: #c9d1d9; font-family: 'Consolas', 'Monaco', monospace; min-height: 100vh; display: flex; flex-direction: column; }
+
+header { padding: 16px 28px; border-bottom: 1px solid #30363d; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+header h1 { font-size: 1.15rem; color: #e6edf3; }
+.badge { padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+.medium { background: #3d2b00; color: #ffa657; }
+.time-badge { background: #0c1f3d; color: #58a6ff; }
+.space-badge { background: #1b1327; color: #d2a8ff; }
+
+#progress { height: 3px; background: #21262d; flex-shrink: 0; }
+#progress-bar { height: 3px; background: #58a6ff; transition: width 0.25s; }
+
+main { display: grid; grid-template-columns: 1fr 1fr; flex: 1; min-height: 0; }
+
+.panel { border-right: 1px solid #30363d; padding: 18px 22px; overflow-y: auto; }
+.panel:last-child { border-right: none; }
+
+.phase-pill { display: inline-block; background: #21262d; color: #58a6ff; border: 1px solid #30363d; border-radius: 20px; padding: 4px 14px; font-size: 0.78rem; margin-bottom: 14px; }
+
+/* Token strip */
+.token-label { font-size: 0.72rem; color: #6e7681; margin-bottom: 6px; letter-spacing: 0.03em; }
+.token-strip { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.tok { padding: 5px 11px; border: 1px solid #30363d; border-radius: 6px; font-size: 0.85rem; background: #161b22; color: #8b949e; transition: all 0.15s; }
+.tok.t-curr  { border-color: #238636; background: #12261e; color: #56d364; font-weight: 700; }
+.tok.t-done  { border-color: #21262d; background: #0d1117; color: #484f58; text-decoration: line-through; }
+.tok.t-skip  { border-color: #ffa657; background: #2d1a00; color: #ffa657; }
+
+/* Action badge */
+.action-row { margin: 10px 0 12px; }
+.action-badge { display: inline-flex; align-items: center; gap: 8px; padding: 5px 16px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; }
+.act-push   { background: #0d2b0d; color: #56d364; border: 1px solid #238636; }
+.act-pop    { background: #2d1317; color: #da3633; border: 1px solid #da3633; }
+.act-skip   { background: #2d1a00; color: #ffa657; border: 1px solid #ffa657; }
+.act-result { background: #1b1327; color: #d2a8ff; border: 1px solid #8957e5; }
+.act-none   { background: #161b22; color: #8b949e; border: 1px solid #30363d; }
+
+/* Stack */
+.stack-section { margin-top: 4px; }
+.stack-label { font-size: 0.72rem; color: #6e7681; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em; }
+.stack-container { display: flex; flex-direction: column; gap: 5px; min-height: 56px; border: 1px dashed #30363d; border-radius: 8px; padding: 10px 12px; }
+.stack-empty { color: #484f58; font-size: 0.82rem; font-style: italic; padding: 4px 0; }
+.stack-item { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 7px 14px; font-size: 0.9rem; color: #c9d1d9; display: flex; align-items: center; justify-content: space-between; }
+.stack-item.t-push { border-color: #238636; background: #12261e; color: #56d364; box-shadow: 0 0 8px #23863640; }
+.stack-item.t-pop  { border-color: #da3633; background: #2d1317; color: #da3633; text-decoration: line-through; opacity: 0.7; }
+.stack-tag { font-size: 0.65rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; margin-left: 8px; }
+.tag-push   { background: #238636; color: #fff; }
+.tag-pop    { background: #da3633; color: #fff; }
+.tag-top    { background: #1f6feb; color: #fff; }
+
+/* Result box */
+.result-box { margin-top: 14px; padding: 14px 20px; background: #1b1327; border: 2px solid #8957e5; border-radius: 8px; text-align: center; color: #d2a8ff; font-size: 1.1rem; font-weight: 700; }
+
+/* Legend */
+.legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: #8b949e; }
+.leg-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+/* Code panel */
+.code-block { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 14px 16px; font-size: 0.82rem; line-height: 2.0; }
+.code-line { display: block; padding: 1px 8px; border-radius: 4px; border-left: 2px solid transparent; white-space: pre; }
+.code-line.active { background: #1c2128; border-left-color: #58a6ff; }
+.kw  { color: #ff7b72; }
+.fn  { color: #d2a8ff; }
+.cm  { color: #8b949e; font-style: italic; }
+.nu  { color: #79c0ff; }
+.var { color: #ffa657; }
+.str { color: #a5d6ff; }
+
+/* Variables grid */
+.vars-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+.var-cell { background: #161b22; border: 1px solid #21262d; border-radius: 6px; padding: 8px 10px; }
+.var-name { font-size: 0.68rem; color: #6e7681; margin-bottom: 2px; }
+.var-val { font-size: 0.82rem; color: #c9d1d9; word-break: break-all; }
+
+/* Changes panel */
+.changes-panel { border: 1px solid #ffa657; border-radius: 8px; margin-top: 14px; overflow: hidden; }
+.changes-title { background: #2d1a00; color: #ffa657; font-size: 0.72rem; font-weight: 700; padding: 5px 12px; letter-spacing: 0.05em; }
+.change-row { padding: 8px 12px; border-top: 1px solid #30363d; font-size: 0.78rem; }
+.change-code { color: #58a6ff; font-weight: 700; margin-bottom: 4px; }
+.change-was { color: #8b949e; margin-bottom: 2px; }
+.change-was span { text-decoration: line-through; color: #da3633; }
+.change-now span { color: #56d364; font-weight: 700; }
+.change-why { color: #6e7681; font-style: italic; margin-top: 4px; }
+.no-change { padding: 8px 12px; font-size: 0.78rem; color: #484f58; font-style: italic; }
+
+/* Footer */
+footer { border-top: 1px solid #30363d; padding: 10px 28px; display: flex; flex-direction: column; align-items: center; gap: 6px; flex-shrink: 0; }
+.footer-row { display: flex; align-items: center; gap: 12px; width: 100%; justify-content: center; }
+.btn { background: #21262d; border: 1px solid #30363d; color: #c9d1d9; padding: 6px 20px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-family: inherit; }
+.btn:hover:not(:disabled) { background: #30363d; }
+.btn:disabled { opacity: 0.3; cursor: default; }
+#explain { background: #161b22; border: 1px solid #21262d; border-radius: 8px; padding: 8px 14px; font-size: 0.8rem; color: #c9d1d9; max-width: 680px; text-align: center; line-height: 1.5; flex: 1; }
+#step-counter { font-size: 0.78rem; color: #6e7681; white-space: nowrap; }
+.kb-hint { font-size: 0.68rem; color: #484f58; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>LC 71 — Simplify Path</h1>
+  <span class="badge medium">Medium</span>
+  <span class="badge time-badge">Time O(n)</span>
+  <span class="badge space-badge">Space O(n)</span>
+</header>
+<div id="progress"><div id="progress-bar"></div></div>
+
+<main>
+  <div class="panel" id="viz-panel">
+    <div id="phase-pill" class="phase-pill"></div>
+    <div id="viz-content"></div>
+  </div>
+
+  <div class="panel">
+    <div class="code-block" id="code-block">
+<span class="code-line" data-ln="1"><span class="kw">def</span> <span class="fn">simplifyPath</span>(<span class="var">path</span>: <span class="var">str</span>) -> <span class="var">str</span>:</span>
+<span class="code-line" data-ln="2">    <span class="var">stack</span> = []</span>
+<span class="code-line" data-ln="3">    <span class="kw">for</span> <span class="var">token</span> <span class="kw">in</span> <span class="var">path</span>.<span class="fn">split</span>(<span class="str">'/'</span>):</span>
+<span class="code-line" data-ln="4">        <span class="kw">if</span> <span class="var">token</span> == <span class="str">'..'</span>:           <span class="cm"># go up</span></span>
+<span class="code-line" data-ln="5">            <span class="kw">if</span> <span class="var">stack</span>:</span>
+<span class="code-line" data-ln="6">                <span class="var">stack</span>.<span class="fn">pop</span>()</span>
+<span class="code-line" data-ln="7">        <span class="kw">elif</span> <span class="var">token</span> <span class="kw">and</span> <span class="var">token</span> != <span class="str">'.'</span>:  <span class="cm"># real dir</span></span>
+<span class="code-line" data-ln="8">            <span class="var">stack</span>.<span class="fn">append</span>(<span class="var">token</span>)</span>
+<span class="code-line" data-ln="9">    <span class="kw">return</span> <span class="str">'/'</span> + <span class="str">'/'</span>.<span class="fn">join</span>(<span class="var">stack</span>)</span>
+    </div>
+    <div class="vars-grid" id="vars-grid"></div>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-row">
+    <button class="btn" id="btn-prev" onclick="go(-1)">← Prev</button>
+    <div id="explain">—</div>
+    <span id="step-counter"></span>
+    <button class="btn" id="btn-next" onclick="go(1)">Next →</button>
+  </div>
+  <div class="kb-hint">keyboard: ← → arrow keys</div>
+</footer>
+
+<script>
+// Input: /a/./b/../../c/  →  /c
+const PATH = '/a/./b/../../c/';
+const DISPLAY_TOKENS = ['""', '"a"', '"."', '"b"', '".."', '".."', '"c"', '""'];
+
+const STEPS = [
+  {
+    phase: 'Step 1 — Problem setup  (line 1)',
+    ln: 1,
+    tokIdx: -1,
+    stack: [],
+    action: 'none',
+    changes: [],
+    vars: { path: PATH, stack: '[]', token: '—' },
+    explain: 'Goal: given the Unix path "' + PATH + '", return its canonical (simplified) form. No "..", no ".", no double slashes, no trailing slash. The key insight: a stack naturally mirrors how a directory tree works — push to go deeper, pop to go up.'
+  },
+  {
+    phase: 'Step 2 — Initialize stack  (line 2)',
+    ln: 2,
+    tokIdx: -1,
+    stack: [],
+    action: 'none',
+    changes: [],
+    vars: { path: PATH, stack: '[]', token: '—' },
+    explain: 'stack = []. This stack will hold only real directory names — no dots, no empty strings. At the end, joining stack with "/" and prepending "/" gives the answer.'
+  },
+  {
+    phase: 'Step 3 — Split path by "/"  (line 3)',
+    ln: 3,
+    tokIdx: -1,
+    stack: [],
+    action: 'none',
+    changes: [],
+    vars: { path: PATH, stack: '[]', token: '—' },
+    explain: 'path.split("/") → ["", "a", ".", "b", "..", "..", "c", ""]. The leading "/" produces an empty string at index 0; the trailing "/" produces one at index 7. Every "//" would also produce an empty string — that is why skipping empty tokens handles multiple slashes automatically.'
+  },
+  {
+    phase: 'Step 4 — token = "" → SKIP  (line 7)',
+    ln: 7,
+    tokIdx: 0,
+    stack: [],
+    action: 'skip',
+    actionLabel: 'SKIP — empty string (from leading "/")',
+    changes: [],
+    vars: { path: PATH, stack: '[]', token: '""' },
+    explain: 'token = "" (empty). The condition "elif token and ..." short-circuits on the first part: empty string is falsy in Python, so we skip without even checking the "!= \'.\'\" part. Stack unchanged: [].'
+  },
+  {
+    phase: 'Step 5 — token = "a" → PUSH  (line 8)',
+    ln: 8,
+    tokIdx: 1,
+    stack: ['a'],
+    action: 'push',
+    actionLabel: 'PUSH "a"',
+    changes: [
+      {
+        code: 'stack.append(token)',
+        was:  'stack  →  []',
+        now:  'stack  →  ["a"]',
+        why:  '"a" is a real directory name — not empty, not ".", not "..". Push it. The stack now represents: we are inside /a/.'
+      }
+    ],
+    vars: { path: PATH, stack: '["a"]', token: '"a"' },
+    explain: 'ARROW CHANGED ↷: token = "a". Passes both checks (truthy AND not "."), so stack.append("a"). Stack = ["a"]. Think of the stack as a breadcrumb trail from root: every item is one level deeper.'
+  },
+  {
+    phase: 'Step 6 — token = "." → SKIP  (line 7)',
+    ln: 7,
+    tokIdx: 2,
+    stack: ['a'],
+    action: 'skip',
+    actionLabel: 'SKIP — "." means current directory',
+    changes: [],
+    vars: { path: PATH, stack: '["a"]', token: '"."' },
+    explain: 'token = ".". It passes the "truthy" check (non-empty), but fails "token != \'.\'" — so we skip. A single dot means "stay where you are". Stack unchanged: ["a"]. We are still inside /a/.'
+  },
+  {
+    phase: 'Step 7 — token = "b" → PUSH  (line 8)',
+    ln: 8,
+    tokIdx: 3,
+    stack: ['a', 'b'],
+    action: 'push',
+    actionLabel: 'PUSH "b"',
+    changes: [
+      {
+        code: 'stack.append(token)',
+        was:  'stack  →  ["a"]',
+        now:  'stack  →  ["a", "b"]',
+        why:  '"b" is a real directory. Now we are two levels deep: /a/b/. The stack top always tells you where you are right now.'
+      }
+    ],
+    vars: { path: PATH, stack: '["a", "b"]', token: '"b"' },
+    explain: 'ARROW CHANGED ↷: token = "b". stack.append("b") → stack = ["a", "b"]. Current location: /a/b/. The top of the stack ("b") is our current directory.'
+  },
+  {
+    phase: 'Step 8 — token = ".." → POP  (lines 4–6)',
+    ln: 6,
+    tokIdx: 4,
+    stack: ['a'],
+    poppedVal: 'b',
+    action: 'pop',
+    actionLabel: 'POP "b" — go up one level',
+    changes: [
+      {
+        code: 'stack.pop()',
+        was:  'stack  →  ["a", "b"]',
+        now:  'stack  →  ["a"]',
+        why:  '".." means "go up one directory". Popping the stack top removes the deepest directory. We are now back in /a/. The "if stack:" guard ensures we never pop an empty stack — at the filesystem root, ".." is a no-op.'
+      }
+    ],
+    vars: { path: PATH, stack: '["a"]', token: '".."' },
+    explain: 'ARROW CHANGED ↷: token = "..". "if stack:" is True (stack is not empty), so stack.pop() removes "b". Stack = ["a"]. We went up from /a/b/ → /a/. The stack literally undoes the last push.'
+  },
+  {
+    phase: 'Step 9 — token = ".." → POP  (lines 4–6)',
+    ln: 6,
+    tokIdx: 5,
+    stack: [],
+    poppedVal: 'a',
+    action: 'pop',
+    actionLabel: 'POP "a" — back to root',
+    changes: [
+      {
+        code: 'stack.pop()',
+        was:  'stack  →  ["a"]',
+        now:  'stack  →  []',
+        why:  'Another "..". Pop "a". Stack is now empty — we are at the filesystem root /. If the path had another ".." here, "if stack:" would be False and we would skip the pop — you cannot go above root.'
+      }
+    ],
+    vars: { path: PATH, stack: '[]', token: '".."' },
+    explain: 'ARROW CHANGED ↷: Another "..". stack.pop() removes "a". Stack = []. We are at root /. Key rule: "../.." from /a/b/ lands at /, not somewhere undefined. The empty-stack guard makes this safe automatically.'
+  },
+  {
+    phase: 'Step 10 — token = "c" → PUSH  (line 8)',
+    ln: 8,
+    tokIdx: 6,
+    stack: ['c'],
+    action: 'push',
+    actionLabel: 'PUSH "c"',
+    changes: [
+      {
+        code: 'stack.append(token)',
+        was:  'stack  →  []',
+        now:  'stack  →  ["c"]',
+        why:  '"c" is a real directory. After navigating all the way back to root, we are now in /c/. The entire "/a/./b/../../" portion collapsed to nothing — this is exactly what the stack is for.'
+      }
+    ],
+    vars: { path: PATH, stack: '["c"]', token: '"c"' },
+    explain: 'ARROW CHANGED ↷: token = "c". stack.append("c") → stack = ["c"]. All of /a/./b/../.. resolved to nothing; now we descend into /c/. The stack at this point is the exact simplified path.'
+  },
+  {
+    phase: 'Step 11 — token = "" → SKIP  (line 7)',
+    ln: 7,
+    tokIdx: 7,
+    stack: ['c'],
+    action: 'skip',
+    actionLabel: 'SKIP — empty string (from trailing "/")',
+    changes: [],
+    vars: { path: PATH, stack: '["c"]', token: '""' },
+    explain: 'token = "" (from the trailing "/" in the input). Falsy → skip. The for loop is now done. Stack = ["c"]. This is why the algorithm strips trailing slashes automatically — empty strings from split just get skipped.'
+  },
+  {
+    phase: 'Step 12 — Build result  (line 9)',
+    ln: 9,
+    tokIdx: -1,
+    stack: ['c'],
+    action: 'result',
+    actionLabel: 'RESULT: "/c"',
+    changes: [],
+    vars: { path: PATH, stack: '["c"]', token: '—' },
+    explain: '"/" + "/".join(["c"]) = "/c". If the stack were empty (e.g. input was "/../"), "/".join([]) = "" so we return "/". This one-liner correctly handles both cases. Time O(n) — one pass over the tokens. Space O(n) — stack holds at most n/2 components.'
+  }
+];
+
+let cur = 0;
+
+function tokenStripH(s) {
+  const label = s.tokIdx >= 0
+    ? `Processing token [${s.tokIdx}] of ${DISPLAY_TOKENS.length}`
+    : 'tokens from path.split("/")';
+  const toks = DISPLAY_TOKENS.map((t, i) => {
+    let cls = 'tok';
+    if (i === s.tokIdx) cls += ' t-curr';
+    else if (i < s.tokIdx) cls += ' t-done';
+    return `<div class="${cls}">${t}</div>`;
+  }).join('');
+  return `<div class="token-label">${label}</div><div class="token-strip">${toks}</div>`;
+}
+
+function actionH(s) {
+  if (s.action === 'none') return '';
+  const cls = { push:'act-push', pop:'act-pop', skip:'act-skip', result:'act-result' }[s.action] || 'act-none';
+  const icon = { push:'↑', pop:'↓', skip:'⊘', result:'✓' }[s.action] || '';
+  return `<div class="action-row"><span class="action-badge ${cls}">${icon} &nbsp;${s.actionLabel}</span></div>`;
+}
+
+function stackH(s) {
+  const stack = s.stack;
+  let rows = [];
+
+  if (s.action === 'pop' && s.poppedVal !== undefined) {
+    rows.push(`<div class="stack-item t-pop">${s.poppedVal}<span class="stack-tag tag-pop">popped</span></div>`);
+    for (let i = stack.length - 1; i >= 0; i--) {
+      const isTop = i === stack.length - 1;
+      rows.push(`<div class="stack-item">${stack[i]}${isTop ? '<span class="stack-tag tag-top">new top</span>' : ''}</div>`);
+    }
+  } else if (s.action === 'push') {
+    for (let i = stack.length - 1; i >= 0; i--) {
+      const isNew = i === stack.length - 1;
+      rows.push(`<div class="stack-item${isNew ? ' t-push' : ''}">${stack[i]}<span class="stack-tag ${isNew ? 'tag-push' : 'tag-top'}">${isNew ? 'pushed' : 'top'}</span></div>`);
+      if (!isNew && i === stack.length - 2) {
+        // already rendered the pushed top; this is below it — no tag needed after top
+      }
+    }
+    // Fix: only show 'top' tag on the newly pushed item (it IS the top)
+  } else {
+    if (stack.length === 0) {
+      rows.push('<span class="stack-empty">[ empty ]</span>');
+    } else {
+      for (let i = stack.length - 1; i >= 0; i--) {
+        const isTop = i === stack.length - 1;
+        rows.push(`<div class="stack-item">${stack[i]}${isTop ? '<span class="stack-tag tag-top">top</span>' : ''}</div>`);
+      }
+    }
+  }
+
+  return `<div class="stack-section">
+    <div class="stack-label">Stack — top ↓ bottom</div>
+    <div class="stack-container">${rows.join('')}</div>
+  </div>`;
+}
+
+function changesH(changes) {
+  if (!changes || changes.length === 0) {
+    return `<div class="changes-panel"><div class="changes-title">↷ STACK OPERATIONS THIS STEP</div>
+      <div class="no-change">No stack mutation this step — reading / deciding only.</div></div>`;
+  }
+  const rows = changes.map(c => `<div class="change-row">
+    <div class="change-code">${c.code}</div>
+    <div class="change-was">was: <span>${c.was}</span></div>
+    <div class="change-now">now: <span>${c.now}</span></div>
+    <div class="change-why">${c.why}</div>
+  </div>`).join('');
+  return `<div class="changes-panel"><div class="changes-title">↷ STACK OPERATION THIS STEP</div>${rows}</div>`;
+}
+
+function render() {
+  const s = STEPS[cur];
+
+  document.getElementById('phase-pill').textContent = s.phase;
+
+  let html = tokenStripH(s);
+  html += actionH(s);
+  html += stackH(s);
+  if (s.action === 'result') {
+    html += `<div class="result-box">✓ &nbsp; Result: &nbsp; "/c"</div>`;
+  }
+  html += changesH(s.changes);
+  html += `<div class="legend">
+    <div class="legend-item"><div class="leg-dot" style="background:#12261e;border:1px solid #238636"></div>Just pushed</div>
+    <div class="legend-item"><div class="leg-dot" style="background:#2d1317;border:1px solid #da3633"></div>Just popped</div>
+    <div class="legend-item"><div class="leg-dot" style="background:#2d1a00;border:1px solid #ffa657"></div>Skipped token</div>
+    <div class="legend-item"><div class="leg-dot" style="background:#21262d;border:1px solid #484f58;text-decoration:line-through"></div>Already processed</div>
+  </div>`;
+
+  document.getElementById('viz-content').innerHTML = html;
+
+  document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active'));
+  const active = document.querySelector(`.code-line[data-ln="${s.ln}"]`);
+  if (active) active.classList.add('active');
+
+  document.getElementById('vars-grid').innerHTML = Object.entries(s.vars).map(([k, v]) =>
+    `<div class="var-cell"><div class="var-name">${k}</div><div class="var-val">${v}</div></div>`
+  ).join('');
+
+  document.getElementById('explain').textContent = s.explain;
+  document.getElementById('step-counter').textContent = `${cur + 1} / ${STEPS.length}`;
+  document.getElementById('progress-bar').style.width = ((cur + 1) / STEPS.length * 100) + '%';
+  document.getElementById('btn-prev').disabled = cur === 0;
+  document.getElementById('btn-next').disabled = cur === STEPS.length - 1;
+}
+
+function go(dir) {
+  const next = cur + dir;
+  if (next >= 0 && next < STEPS.length) { cur = next; render(); }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1);
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   go(-1);
+});
+
+render();
+</script>
+</body>
+</html>
