@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LC 84 — Largest Rectangle in Histogram</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0d1117; color: #c9d1d9; font-family: 'Consolas','Monaco',monospace; min-height: 100vh; display: flex; flex-direction: column; }
+
+header { padding: 16px 28px; border-bottom: 1px solid #30363d; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+header h1 { font-size: 1.15rem; color: #e6edf3; }
+.badge { padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+.hard  { background: #2d1317; color: #da3633; }
+.time-badge { background: #0c1f3d; color: #58a6ff; }
+.space-badge { background: #1b1327; color: #d2a8ff; }
+
+#progress { height: 3px; background: #21262d; flex-shrink: 0; }
+#progress-bar { height: 3px; background: #58a6ff; transition: width 0.25s; }
+
+main { display: grid; grid-template-columns: 1fr 1fr; flex: 1; min-height: 0; }
+.panel { border-right: 1px solid #30363d; padding: 18px 22px; overflow-y: auto; }
+.panel:last-child { border-right: none; }
+.phase-pill { display: inline-block; background: #21262d; color: #58a6ff; border: 1px solid #30363d; border-radius: 20px; padding: 4px 14px; font-size: 0.78rem; margin-bottom: 14px; }
+
+/* Histogram */
+.histo-label { font-size: 0.72rem; color: #6e7681; margin-bottom: 8px; letter-spacing: 0.03em; }
+.histogram { display: flex; align-items: flex-end; gap: 5px; height: 140px; padding: 0 2px 0; }
+.bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; height: 100%; justify-content: flex-end; }
+.bar { width: 100%; border-radius: 3px 3px 0 0; transition: all 0.2s; position: relative; }
+.bar-h  { position: absolute; top: -18px; width: 100%; text-align: center; font-size: 0.7rem; color: #8b949e; }
+.bar-ix { position: absolute; bottom: -18px; width: 100%; text-align: center; font-size: 0.7rem; color: #484f58; }
+.bar.b-normal  { background: #1f6feb; }
+.bar.b-curr    { background: #58a6ff; box-shadow: 0 0 10px #58a6ff60; }
+.bar.b-rect    { background: #d2a8ff50; border: 2px solid #8957e5; }
+.bar.b-max     { background: #56d36450; border: 2px solid #56d364; box-shadow: 0 0 8px #56d36440; }
+.bar.b-stack   { background: #0c1f3d; border: 1px solid #1f6feb; }
+.bar.b-flush   { background: #2d1a0050; border: 2px solid #ffa657; }
+.histo-idx-row { display: flex; gap: 5px; margin-top: 22px; padding: 0 2px; }
+.histo-idx { flex: 1; text-align: center; font-size: 0.7rem; color: #484f58; }
+
+/* Rect info */
+.rect-info { margin: 8px 0; padding: 8px 14px; border: 1px solid #8957e5; border-radius: 6px; background: #1b1327; font-size: 0.82rem; color: #d2a8ff; }
+.rect-info.rect-max { border-color: #56d364; background: #0d2b0d; color: #56d364; }
+.rect-info.rect-flush { border-color: #ffa657; background: #2d1a00; color: #ffa657; }
+
+/* max_area display */
+.max-row { display: flex; align-items: center; gap: 14px; margin: 10px 0; }
+.max-label { font-size: 0.72rem; color: #6e7681; }
+.max-val { font-size: 1.4rem; font-weight: 700; color: #56d364; }
+.max-val.updated { color: #ffa657; }
+
+/* Monotonic stack display */
+.stack-label { font-size: 0.72rem; color: #6e7681; margin: 10px 0 6px; text-transform: uppercase; letter-spacing: 0.06em; }
+.stack-container { display: flex; flex-direction: column; gap: 5px; min-height: 44px; border: 1px dashed #30363d; border-radius: 8px; padding: 10px 12px; }
+.stack-empty { color: #484f58; font-size: 0.82rem; font-style: italic; }
+.stack-item { background: #0c1f3d; border: 1px solid #1f6feb; border-radius: 6px; padding: 6px 14px; font-size: 0.85rem; color: #58a6ff; display: flex; align-items: center; justify-content: space-between; }
+.stack-item.s-new   { border-color: #238636; background: #12261e; color: #56d364; box-shadow: 0 0 8px #23863640; }
+.stack-item.s-pop   { border-color: #da3633; background: #2d1317; color: #da3633; text-decoration: line-through; opacity: 0.7; }
+.stack-item.s-flush { border-color: #ffa657; background: #2d1a00; color: #ffa657; }
+.stag { font-size: 0.65rem; font-weight: 700; padding: 1px 5px; border-radius: 4px; margin-left: 6px; }
+.tag-new   { background: #238636; color: #fff; }
+.tag-top   { background: #1f6feb; color: #fff; }
+.tag-pop   { background: #da3633; color: #fff; }
+.tag-flush { background: #ffa657; color: #0d1117; }
+
+/* Changes panel */
+.changes-panel { border: 1px solid #ffa657; border-radius: 8px; margin-top: 12px; overflow: hidden; }
+.changes-title { background: #2d1a00; color: #ffa657; font-size: 0.72rem; font-weight: 700; padding: 5px 12px; letter-spacing: 0.05em; }
+.change-row { padding: 8px 12px; border-top: 1px solid #30363d; font-size: 0.78rem; }
+.change-code { color: #58a6ff; font-weight: 700; margin-bottom: 4px; }
+.change-was span { text-decoration: line-through; color: #da3633; }
+.change-now span { color: #56d364; font-weight: 700; }
+.change-why { color: #6e7681; font-style: italic; margin-top: 4px; }
+.no-change { padding: 8px 12px; font-size: 0.78rem; color: #484f58; font-style: italic; }
+
+/* Code panel */
+.code-block { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 14px 16px; font-size: 0.8rem; line-height: 2.0; }
+.code-line { display: block; padding: 1px 8px; border-radius: 4px; border-left: 2px solid transparent; white-space: pre; }
+.code-line.active { background: #1c2128; border-left-color: #58a6ff; }
+.kw { color: #ff7b72; } .fn { color: #d2a8ff; } .cm { color: #8b949e; font-style: italic; }
+.nu { color: #79c0ff; } .var { color: #ffa657; } .str { color: #a5d6ff; }
+
+.vars-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+.var-cell { background: #161b22; border: 1px solid #21262d; border-radius: 6px; padding: 8px 10px; }
+.var-name { font-size: 0.68rem; color: #6e7681; margin-bottom: 2px; }
+.var-val  { font-size: 0.82rem; color: #c9d1d9; word-break: break-all; }
+
+/* Legend */
+.legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.7rem; color: #8b949e; }
+.leg-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+footer { border-top: 1px solid #30363d; padding: 10px 28px; display: flex; flex-direction: column; align-items: center; gap: 6px; flex-shrink: 0; }
+.footer-row { display: flex; align-items: center; gap: 12px; width: 100%; justify-content: center; }
+.btn { background: #21262d; border: 1px solid #30363d; color: #c9d1d9; padding: 6px 20px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-family: inherit; }
+.btn:hover:not(:disabled) { background: #30363d; }
+.btn:disabled { opacity: 0.3; cursor: default; }
+#explain { background: #161b22; border: 1px solid #21262d; border-radius: 8px; padding: 8px 14px; font-size: 0.8rem; color: #c9d1d9; max-width: 680px; text-align: center; line-height: 1.5; flex: 1; }
+#step-counter { font-size: 0.78rem; color: #6e7681; white-space: nowrap; }
+.kb-hint { font-size: 0.68rem; color: #484f58; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>LC 84 — Largest Rectangle in Histogram</h1>
+  <span class="badge hard">Hard</span>
+  <span class="badge time-badge">Time O(n)</span>
+  <span class="badge space-badge">Space O(n)</span>
+</header>
+<div id="progress"><div id="progress-bar"></div></div>
+
+<main>
+  <div class="panel">
+    <div id="phase-pill" class="phase-pill"></div>
+    <div id="viz-content"></div>
+  </div>
+  <div class="panel">
+    <div class="code-block">
+<span class="code-line" data-ln="1"><span class="kw">def</span> <span class="fn">largestRectangleArea</span>(<span class="var">heights</span>):</span>
+<span class="code-line" data-ln="2">    <span class="var">stack</span> = []        <span class="cm"># (start, height)</span></span>
+<span class="code-line" data-ln="3">    <span class="var">max_area</span> = <span class="nu">0</span></span>
+<span class="code-line" data-ln="4"> </span>
+<span class="code-line" data-ln="5">    <span class="kw">for</span> <span class="var">i</span>, <span class="var">h</span> <span class="kw">in</span> <span class="fn">enumerate</span>(<span class="var">heights</span>):</span>
+<span class="code-line" data-ln="6">        <span class="var">start</span> = <span class="var">i</span></span>
+<span class="code-line" data-ln="7">        <span class="kw">while</span> <span class="var">stack</span> <span class="kw">and</span> <span class="var">stack</span>[-<span class="nu">1</span>][<span class="nu">1</span>] >= <span class="var">h</span>:</span>
+<span class="code-line" data-ln="8">            <span class="var">j</span>, <span class="var">height</span> = <span class="var">stack</span>.<span class="fn">pop</span>()</span>
+<span class="code-line" data-ln="9">            <span class="var">max_area</span> = <span class="fn">max</span>(<span class="var">max_area</span>, <span class="var">height</span> * (<span class="var">i</span> - <span class="var">j</span>))</span>
+<span class="code-line" data-ln="10">            <span class="var">start</span> = <span class="var">j</span></span>
+<span class="code-line" data-ln="11">        <span class="var">stack</span>.<span class="fn">append</span>((<span class="var">start</span>, <span class="var">h</span>))</span>
+<span class="code-line" data-ln="12"> </span>
+<span class="code-line" data-ln="13">    <span class="kw">for</span> <span class="var">j</span>, <span class="var">height</span> <span class="kw">in</span> <span class="var">stack</span>:</span>
+<span class="code-line" data-ln="14">        <span class="var">max_area</span> = <span class="fn">max</span>(<span class="var">max_area</span>, <span class="var">height</span> * (<span class="fn">len</span>(<span class="var">heights</span>) - <span class="var">j</span>))</span>
+<span class="code-line" data-ln="15"> </span>
+<span class="code-line" data-ln="16">    <span class="kw">return</span> <span class="var">max_area</span></span>
+    </div>
+    <div class="vars-grid" id="vars-grid"></div>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-row">
+    <button class="btn" id="btn-prev" onclick="go(-1)">← Prev</button>
+    <div id="explain">—</div>
+    <span id="step-counter"></span>
+    <button class="btn" id="btn-next" onclick="go(1)">Next →</button>
+  </div>
+  <div class="kb-hint">keyboard: ← → arrow keys</div>
+</footer>
+
+<script>
+// heights = [2, 1, 5, 6, 2, 3]  →  max_area = 10
+// Approach: monotonic increasing stack stores (start_idx, height)
+// When we find h < stack top, the top's rectangle is "closed" on the right.
+const HEIGHTS = [2, 1, 5, 6, 2, 3];
+const MAX_H = 6;
+
+// barStates per bar: 'b-normal' | 'b-curr' | 'b-rect' | 'b-max' | 'b-stack' | 'b-flush'
+// stack entries: {start, h, cls}  cls: 's-new' | '' | 's-pop' | 's-flush'
+
+const STEPS = [
+  {
+    phase: 'Step 1 — Problem setup  (lines 1–3)',
+    ln: 2,
+    barStates: ['b-normal','b-normal','b-normal','b-normal','b-normal','b-normal'],
+    rectBars: null, rectH: 0, rectArea: 0, rectCls: '',
+    stackEntries: [], maxArea: 0, maxUpdated: false,
+    changes: [],
+    vars: { i: '—', h: '—', start: '—', 'max_area': '0', stack: '[]' },
+    explain: 'Goal: find the largest rectangle that fits inside the histogram [2,1,5,6,2,3]. Brute-force is O(n²). The key insight: use a monotonic increasing stack — when we find a bar shorter than the stack top, the top\'s rectangle is "trapped" (can\'t extend right). We can calculate its exact area right then.'
+  },
+  {
+    phase: 'Step 2 — i=0, h=2: stack empty → push  (lines 5–6, 11)',
+    ln: 11,
+    barStates: ['b-curr','b-normal','b-normal','b-normal','b-normal','b-normal'],
+    rectBars: null, rectH: 0, rectArea: 0, rectCls: '',
+    stackEntries: [{ lbl: '(start=0, h=2)', cls: 's-new' }],
+    maxArea: 0, maxUpdated: false,
+    changes: [
+      { code: 'stack.append((0, 2))',
+        was: 'stack  →  []',
+        now: 'stack  →  [(0,2)]',
+        why: 'Stack is empty, no popping needed. Push (start=0, h=2). The tuple means: "there is a potential rectangle of height 2 that starts at index 0 and is still open — it can still extend right."' }
+    ],
+    vars: { i: '0', h: '2', start: '0', max_area: '0', stack: '[(0,2)]' },
+    explain: 'i=0, h=2. Stack is empty so we skip the while loop. Push (start=0, h=2). The stack maintains a monotonically increasing sequence of heights — each entry represents a "still open" rectangle.'
+  },
+  {
+    phase: 'Step 3 — i=1, h=1: pop (0,2) → area=2  (lines 7–10)',
+    ln: 9,
+    barStates: ['b-rect','b-curr','b-normal','b-normal','b-normal','b-normal'],
+    rectBars: [0, 0], rectH: 2, rectArea: 2, rectCls: 'rect-info',
+    stackEntries: [{ lbl: '(start=0, h=2)', cls: 's-pop' }],
+    maxArea: 2, maxUpdated: true,
+    changes: [
+      { code: 'j, height = stack.pop()  →  j=0, height=2',
+        was: 'stack  →  [(0,2)]',
+        now: 'stack  →  []',
+        why: 'h=1 < stack top height=2 → the height-2 rectangle cannot extend past i=1. Its right boundary is i=1. Width = i - j = 1 - 0 = 1. Area = 2 × 1 = 2. This is "closing" the rectangle before it gets blocked.' },
+      { code: 'max_area = max(0, 2 × 1) = 2',
+        was: 'max_area  →  0',
+        now: 'max_area  →  2',
+        why: 'New best area. Also: start = j = 0, meaning the next push will "inherit" this leftward reach.' }
+    ],
+    vars: { i: '1', h: '1', start: '0', max_area: '2', stack: '[]' },
+    explain: 'ARROW CHANGED ↷: h=1 < stack[-1].height=2. Pop (0,2). Rectangle: height=2, width=1-0=1, area=2. max_area=2. Set start=0 (bar 1 at height 1 can now extend back to where height-2 started).'
+  },
+  {
+    phase: 'Step 4 — i=1, h=1: push (0, 1)  (line 11)',
+    ln: 11,
+    barStates: ['b-stack','b-curr','b-normal','b-normal','b-normal','b-normal'],
+    rectBars: null, rectH: 0, rectArea: 0, rectCls: '',
+    stackEntries: [{ lbl: '(start=0, h=1)', cls: 's-new' }],
+    maxArea: 2, maxUpdated: false,
+    changes: [
+      { code: 'stack.append((start=0, h=1))',
+        was: 'stack  →  []',
+        now: 'stack  →  [(0,1)]',
+        why: 'Push start=0, not i=1. Why 0? Because when we popped height-2, we set start=0. This means "height 1 can extend back to index 0" — since the shorter bar can be the floor of a taller rectangle that spans further left.' }
+    ],
+    vars: { i: '1', h: '1', start: '0', max_area: '2', stack: '[(0,1)]' },
+    explain: 'Push (start=0, h=1). Note: start=0, not start=1! The height-1 bar can form a rectangle going all the way back to index 0 because the taller bar we just popped used to block that path.'
+  },
+  {
+    phase: 'Step 5 — i=2, h=5: stack top h=1 < 5 → push  (line 11)',
+    ln: 11,
+    barStates: ['b-stack','b-stack','b-curr','b-normal','b-normal','b-normal'],
+    rectBars: null, rectH: 0, rectArea: 0, rectCls: '',
+    stackEntries: [
+      { lbl: '(start=0, h=1)', cls: '' },
+      { lbl: '(start=2, h=5)', cls: 's-new' }
+    ],
+    maxArea: 2, maxUpdated: false,
+    changes: [
+      { code: 'stack.append((2, 5))',
+        was: 'stack  →  [(0,1)]',
+        now: 'stack  →  [(0,1), (2,5)]',
+        why: 'h=5 > stack[-1].h=1 → no pop needed (stack stays increasing). Push (start=2, h=5). The stack is always in strictly increasing height order.' }
+    ],
+    vars: { i: '2', h: '5', start: '2', max_area: '2', stack: '[(0,1),(2,5)]' },
+    explain: 'i=2, h=5. Stack top h=1 < 5, so while-loop doesn\'t fire. Push (2,5). Stack = [(0,1),(2,5)]. Monotonically increasing: [1,5]. Both rectangles are "still open" — they can still extend right.'
+  },
+  {
+    phase: 'Step 6 — i=3, h=6: push  (line 11)',
+    ln: 11,
+    barStates: ['b-stack','b-stack','b-stack','b-curr','b-normal','b-normal'],
+    rectBars: null, rectH: 0, rectArea: 0, rectCls: '',
+    stackEntries: [
+      { lbl: '(start=0, h=1)', cls: '' },
+      { lbl: '(start=2, h=5)', cls: '' },
+      { lbl: '(start=3, h=6)', cls: 's-new' }
+    ],
+    maxArea: 2, maxUpdated: false,
+    changes: [
+      { code: 'stack.append((3, 6))',
+        was: 'stack  →  [(0,1),(2,5)]',
+        now: 'stack  →  [(0,1),(2,5),(3,6)]',
+        why: 'h=6 > stack[-1].h=5 → no pop. Stack stays increasing: heights [1,5,6]. All three rectangles can still grow rightward.' }
+    ],
+    vars: { i: '3', h: '6', start: '3', max_area: '2', stack: '[(0,1),(2,5),(3,6)]' },
+    explain: 'i=3, h=6. Stack top h=5 < 6 → push. Stack = [(0,1),(2,5),(3,6)]. Heights [1,5,6] — strictly increasing. We\'re building up. The big pop happens at i=4 when h=2 forces us to close both 6 and 5.'
+  },
+  {
+    phase: 'Step 7 — i=4, h=2: pop (3,6) → area=6  (lines 7–10)',
+    ln: 9,
+    barStates: ['b-stack','b-stack','b-stack','b-rect','b-curr','b-normal'],
+    rectBars: [3, 3], rectH: 6, rectArea: 6, rectCls: 'rect-info',
+    stackEntries: [
+      { lbl: '(start=0, h=1)', cls: '' },
+      { lbl: '(start=2, h=5)', cls: '' },
+      { lbl: '(start=3, h=6)', cls: 's-pop' }
+    ],
+    maxArea: 6, maxUpdated: true,
+    changes: [
+      { code: 'j, height = stack.pop()  →  j=3, height=6',
+        was: 'stack  →  [(0,1),(2,5),(3,6)]',
+        now: 'stack  →  [(0,1),(2,5)]',
+        why: 'h=2 < stack[-1].h=6. The height-6 rectangle can\'t extend past i=4. Width = 4-3 = 1 (only bar 3). Area = 6×1 = 6. start = j = 3 (may extend left further on next pop).' }
+    ],
+    vars: { i: '4', h: '2', start: '3', max_area: '6', stack: '[(0,1),(2,5)]' },
+    explain: 'ARROW CHANGED ↷: i=4, h=2 < stack[-1].h=6. Pop (3,6). Rectangle: height=6, from index 3 to 3, width=1, area=6. max_area=6. Continue while loop — stack[-1].h=5 ≥ 2 so we pop again.'
+  },
+  {
+    phase: 'Step 8 — i=4, h=2: pop (2,5) → area=10  (lines 7–10)',
+    ln: 9,
+    barStates: ['b-stack','b-stack','b-rect','b-rect','b-curr','b-normal'],
+    rectBars: [2, 3], rectH: 5, rectArea: 10, rectCls: 'rect-info rect-max',
+    stackEntries: [
+      { lbl: '(start=0, h=1)', cls: '' },
+      { lbl: '(start=2, h=5)', cls: 's-pop' }
+    ],
+    maxArea: 10, maxUpdated: true,
+    changes: [
+      { code: 'j, height = stack.pop()  →  j=2, height=5',
+        was: 'stack  →  [(0,1),(2,5)]',
+        now: 'stack  →  [(0,1)]',
+        why: 'h=2 < stack[-1].h=5. The height-5 rectangle spans from j=2 (where it started) up to i=4. Width = 4-2 = 2 (bars 2 and 3). Area = 5×2 = 10. NEW MAXIMUM.' },
+      { code: 'max_area = max(6, 5 × 2) = 10',
+        was: 'max_area  →  6',
+        now: 'max_area  →  10',
+        why: 'The best rectangle in this histogram. start = j = 2 — the next push will inherit this leftward reach.' }
+    ],
+    vars: { i: '4', h: '2', start: '2', max_area: '10', stack: '[(0,1)]' },
+    explain: 'ARROW CHANGED ↷: pop (2,5). Height-5 rectangle: from index 2 to 3, width=2, area=10. NEW MAX! start=2. Stack[-1].h=1 < h=2, while-loop exits.'
+  },
+  {
+    phase: 'Step 9 — i=4, h=2: push (2, 2)  (line 11)',
+    ln: 11,
+    barStates: ['b-stack','b-stack','b-stack','b-stack','b-curr','b-normal'],
+    rectBars: null, rectH: 0, rectArea: 0, rectCls: '',
+    stackEntries: [
+      { lbl: '(start=0, h=1)', cls: '' },
+      { lbl: '(start=2, h=2)', cls: 's-new' }
+    ],
+    maxArea: 10, maxUpdated: false,
+    changes: [
+      { code: 'stack.append((start=2, h=2))',
+        was: 'stack  →  [(0,1)]',
+        now: 'stack  →  [(0,1),(2,2)]',
+        why: 'Push start=2 (inherited from the pops). The height-2 bar at i=4 can form a rectangle extending all the way back to index 2 — because bars 2 and 3 (heights 5 and 6) that used to be there are taller, so height-2 can use their floor.' }
+    ],
+    vars: { i: '4', h: '2', start: '2', max_area: '10', stack: '[(0,1),(2,2)]' },
+    explain: 'Push (start=2, h=2). Start=2, not 4, because bar 4 can extend leftward to index 2 (where the popped height-5 rectangle started). Stack = [(0,1),(2,2)]. Heights [1,2] — increasing again.'
+  },
+  {
+    phase: 'Step 10 — i=5, h=3: push (5, 3)  (line 11)',
+    ln: 11,
+    barStates: ['b-stack','b-stack','b-stack','b-stack','b-stack','b-curr'],
+    rectBars: null, rectH: 0, rectArea: 0, rectCls: '',
+    stackEntries: [
+      { lbl: '(start=0, h=1)', cls: '' },
+      { lbl: '(start=2, h=2)', cls: '' },
+      { lbl: '(start=5, h=3)', cls: 's-new' }
+    ],
+    maxArea: 10, maxUpdated: false,
+    changes: [
+      { code: 'stack.append((5, 3))',
+        was: 'stack  →  [(0,1),(2,2)]',
+        now: 'stack  →  [(0,1),(2,2),(5,3)]',
+        why: 'h=3 > stack[-1].h=2 → no pop. Push (5,3). Stack = [(0,1),(2,2),(5,3)]. Heights [1,2,3] — increasing. End of array reached.' }
+    ],
+    vars: { i: '5', h: '3', start: '5', max_area: '10', stack: '[(0,1),(2,2),(5,3)]' },
+    explain: 'i=5, h=3. Stack top h=2 < 3 → push. End of heights array. Stack has 3 remaining entries — they haven\'t been closed yet because no shorter bar appeared to their right. Now we flush them.'
+  },
+  {
+    phase: 'Step 11 — Flush: pop (5,3) → area=3  (lines 13–14)',
+    ln: 14,
+    barStates: ['b-stack','b-stack','b-stack','b-stack','b-stack','b-flush'],
+    rectBars: [5, 5], rectH: 3, rectArea: 3, rectCls: 'rect-info rect-flush',
+    stackEntries: [
+      { lbl: '(start=0, h=1)', cls: '' },
+      { lbl: '(start=2, h=2)', cls: '' },
+      { lbl: '(start=5, h=3)', cls: 's-flush' }
+    ],
+    maxArea: 10, maxUpdated: false,
+    changes: [
+      { code: 'max_area = max(10, 3 × (6−5)) = max(10, 3) = 10',
+        was: 'max_area  →  10',
+        now: 'max_area  →  10',
+        why: 'Remaining entries extend to the right edge (len=6). Width = 6 - 5 = 1. Area = 3×1 = 3. Not a new max.' }
+    ],
+    vars: { i: '—', h: '—', start: '—', max_area: '10', stack: '[(0,1),(2,2)]' },
+    explain: 'Flushing remaining stack. (5,3): height=3 extends from index 5 to end. Width = 6-5 = 1. Area = 3. Not a new max (still 10).'
+  },
+  {
+    phase: 'Step 12 — Flush: pop (2,2) → area=8  (line 14)',
+    ln: 14,
+    barStates: ['b-stack','b-stack','b-flush','b-flush','b-flush','b-flush'],
+    rectBars: [2, 5], rectH: 2, rectArea: 8, rectCls: 'rect-info rect-flush',
+    stackEntries: [
+      { lbl: '(start=0, h=1)', cls: '' },
+      { lbl: '(start=2, h=2)', cls: 's-flush' }
+    ],
+    maxArea: 10, maxUpdated: false,
+    changes: [
+      { code: 'max_area = max(10, 2 × (6−2)) = max(10, 8) = 10',
+        was: 'max_area  →  10',
+        now: 'max_area  →  10',
+        why: 'Width = 6 - 2 = 4 (bars 2,3,4,5). Area = 2×4 = 8. Not a new max.' }
+    ],
+    vars: { i: '—', h: '—', start: '—', max_area: '10', stack: '[(0,1)]' },
+    explain: 'Flush (2,2): height=2 from index 2 to end. Width = 6-2 = 4. Area = 8. This rectangle spans bars [2,3,4,5] at height 2 — impressive width but not the max.'
+  },
+  {
+    phase: 'Step 13 — Flush: pop (0,1) → area=6  (line 14)',
+    ln: 14,
+    barStates: ['b-flush','b-flush','b-flush','b-flush','b-flush','b-flush'],
+    rectBars: [0, 5], rectH: 1, rectArea: 6, rectCls: 'rect-info rect-flush',
+    stackEntries: [
+      { lbl: '(start=0, h=1)', cls: 's-flush' }
+    ],
+    maxArea: 10, maxUpdated: false,
+    changes: [
+      { code: 'max_area = max(10, 1 × (6−0)) = max(10, 6) = 10',
+        was: 'max_area  →  10',
+        now: 'max_area  →  10',
+        why: 'Width = 6 - 0 = 6 (all bars). Area = 1×6 = 6. The entire histogram floor rectangle. Not a new max.' }
+    ],
+    vars: { i: '—', h: '—', start: '—', max_area: '10', stack: '[]' },
+    explain: 'Flush (0,1): height=1 spans all 6 bars. Width=6. Area=6. Stack is now empty. All rectangles evaluated. Return max_area = 10.'
+  },
+  {
+    phase: 'Step 14 — Result: max_area = 10  (line 16)',
+    ln: 16,
+    barStates: ['b-normal','b-normal','b-max','b-max','b-normal','b-normal'],
+    rectBars: [2, 3], rectH: 5, rectArea: 10, rectCls: 'rect-info rect-max',
+    stackEntries: [],
+    maxArea: 10, maxUpdated: false,
+    changes: [],
+    vars: { i: '—', h: '—', start: '—', max_area: '10', stack: '[]' },
+    explain: 'return 10. The maximum rectangle is height=5, width=2, spanning bars [2,3] (heights 5 and 6). O(n) time: each bar is pushed and popped at most once. O(n) space for the stack. The monotonic stack gives us O(n) by deferring area calculation until each bar\'s right boundary is known.'
+  }
+];
+
+let cur = 0;
+
+function histogramH(s) {
+  const bars = HEIGHTS.map((h, i) => {
+    const pct = (h / MAX_H * 100).toFixed(1);
+    const bc = s.barStates[i] || 'b-normal';
+    return `<div class="bar-wrap">
+      <div class="bar-h">${h}</div>
+      <div class="bar ${bc}" style="height:${pct}%"></div>
+      <div class="bar-ix">${i}</div>
+    </div>`;
+  }).join('');
+
+  let rectInfo = '';
+  if (s.rectBars) {
+    const [lo, hi] = s.rectBars;
+    rectInfo = `<div class="rect-info ${s.rectCls}" style="margin-top:28px">
+      height ${s.rectH} × width ${hi - lo + 1} = area <strong>${s.rectArea}</strong>
+      &nbsp;(bars [${lo}…${hi}])
+    </div>`;
+  }
+
+  return `<div class="histo-label">heights = [2, 1, 5, 6, 2, 3] &nbsp;|&nbsp; max = ${MAX_H}</div>
+  <div class="histogram">${bars}</div>
+  ${rectInfo || '<div style="height:28px"></div>'}`;
+}
+
+function maxAreaH(s) {
+  return `<div class="max-row">
+    <span class="max-label">max_area</span>
+    <span class="max-val${s.maxUpdated ? ' updated' : ''}">${s.maxArea}</span>
+    ${s.maxUpdated ? '<span style="font-size:0.75rem;color:#ffa657">← NEW MAX</span>' : ''}
+  </div>`;
+}
+
+function stackH(entries) {
+  if (!entries || entries.length === 0) return `<div class="stack-container"><span class="stack-empty">[ empty ]</span></div>`;
+  const items = [...entries].reverse().map((e, ri) => {
+    const isTop = ri === 0;
+    return `<div class="stack-item ${e.cls}">${e.lbl}${isTop ? `<span class="stag ${e.cls === 's-new' ? 'tag-new' : e.cls === 's-pop' ? 'tag-pop' : e.cls === 's-flush' ? 'tag-flush' : 'tag-top'}">${e.cls === 's-new' ? 'pushed' : e.cls === 's-pop' ? 'popped' : e.cls === 's-flush' ? 'flushing' : 'top'}</span>` : ''}</div>`;
+  }).join('');
+  return `<div class="stack-container">${items}</div>`;
+}
+
+function changesH(changes) {
+  if (!changes || changes.length === 0) {
+    return `<div class="changes-panel"><div class="changes-title">↷ OPERATIONS THIS STEP</div>
+      <div class="no-change">No stack mutation — examining conditions only.</div></div>`;
+  }
+  const rows = changes.map(c => `<div class="change-row">
+    <div class="change-code">${c.code}</div>
+    <div class="change-was">was: <span>${c.was}</span></div>
+    <div class="change-now">now: <span>${c.now}</span></div>
+    <div class="change-why">${c.why}</div>
+  </div>`).join('');
+  return `<div class="changes-panel"><div class="changes-title">↷ OPERATIONS THIS STEP</div>${rows}</div>`;
+}
+
+function render() {
+  const s = STEPS[cur];
+  document.getElementById('phase-pill').textContent = s.phase;
+
+  let html = histogramH(s);
+  html += maxAreaH(s);
+  html += `<div class="stack-label">Monotonic stack — (start_idx, height), top ↓ bottom</div>`;
+  html += stackH(s.stackEntries);
+  html += changesH(s.changes);
+  html += `<div class="legend">
+    <div class="legend-item"><div class="leg-dot" style="background:#58a6ff;border:1px solid #58a6ff"></div>Current bar i</div>
+    <div class="legend-item"><div class="leg-dot" style="background:#0c1f3d;border:1px solid #1f6feb"></div>In stack (open)</div>
+    <div class="legend-item"><div class="leg-dot" style="background:#d2a8ff50;border:1px solid #8957e5"></div>Rectangle being evaluated</div>
+    <div class="legend-item"><div class="leg-dot" style="background:#56d36450;border:1px solid #56d364"></div>Max area rectangle</div>
+    <div class="legend-item"><div class="leg-dot" style="background:#2d1a0050;border:1px solid #ffa657"></div>Flush (extends to end)</div>
+  </div>`;
+
+  document.getElementById('viz-content').innerHTML = html;
+
+  document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active'));
+  const al = document.querySelector(`.code-line[data-ln="${s.ln}"]`);
+  if (al) al.classList.add('active');
+
+  document.getElementById('vars-grid').innerHTML = Object.entries(s.vars).map(([k, v]) =>
+    `<div class="var-cell"><div class="var-name">${k}</div><div class="var-val">${v}</div></div>`
+  ).join('');
+
+  document.getElementById('explain').textContent = s.explain;
+  document.getElementById('step-counter').textContent = `${cur + 1} / ${STEPS.length}`;
+  document.getElementById('progress-bar').style.width = ((cur + 1) / STEPS.length * 100) + '%';
+  document.getElementById('btn-prev').disabled = cur === 0;
+  document.getElementById('btn-next').disabled = cur === STEPS.length - 1;
+}
+
+function go(dir) {
+  const n = cur + dir;
+  if (n >= 0 && n < STEPS.length) { cur = n; render(); }
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1);
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   go(-1);
+});
+render();
+</script>
+</body>
+</html>

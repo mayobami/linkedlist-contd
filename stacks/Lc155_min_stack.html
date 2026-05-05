@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LC 155 — Min Stack</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0d1117; color: #c9d1d9; font-family: 'Consolas','Monaco',monospace; min-height: 100vh; display: flex; flex-direction: column; }
+
+header { padding: 16px 28px; border-bottom: 1px solid #30363d; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+header h1 { font-size: 1.15rem; color: #e6edf3; }
+.badge { padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+.easy   { background: #0d2b0d; color: #56d364; }
+.time-badge { background: #0c1f3d; color: #58a6ff; }
+.space-badge { background: #1b1327; color: #d2a8ff; }
+
+#progress { height: 3px; background: #21262d; flex-shrink: 0; }
+#progress-bar { height: 3px; background: #58a6ff; transition: width 0.25s; }
+
+main { display: grid; grid-template-columns: 1fr 1fr; flex: 1; min-height: 0; }
+.panel { border-right: 1px solid #30363d; padding: 18px 22px; overflow-y: auto; }
+.panel:last-child { border-right: none; }
+
+.phase-pill { display: inline-block; background: #21262d; color: #58a6ff; border: 1px solid #30363d; border-radius: 20px; padding: 4px 14px; font-size: 0.78rem; margin-bottom: 14px; }
+
+/* Operation badge */
+.op-row { margin-bottom: 14px; }
+.op-badge { display: inline-flex; align-items: center; gap: 8px; padding: 6px 18px; border-radius: 20px; font-size: 0.9rem; font-weight: 700; }
+.op-push  { background: #0d2b0d; color: #56d364; border: 1px solid #238636; }
+.op-pop   { background: #2d1317; color: #da3633; border: 1px solid #da3633; }
+.op-getmin{ background: #1b1327; color: #d2a8ff; border: 1px solid #8957e5; }
+.op-top   { background: #0c1f3d; color: #58a6ff; border: 1px solid #1f6feb; }
+.op-init  { background: #161b22; color: #8b949e; border: 1px solid #30363d; }
+
+/* Dual stack layout */
+.dual-stack { display: flex; gap: 16px; margin: 8px 0; }
+.stack-col { flex: 1; }
+.stack-col-title { font-size: 0.72rem; color: #6e7681; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em; }
+.stack-container { display: flex; flex-direction: column; gap: 5px; min-height: 56px; border: 1px dashed #30363d; border-radius: 8px; padding: 10px 12px; }
+.stack-empty { color: #484f58; font-size: 0.82rem; font-style: italic; }
+.stack-item { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 7px 14px; font-size: 0.9rem; color: #c9d1d9; display: flex; align-items: center; justify-content: space-between; }
+.stack-item.t-push   { border-color: #238636; background: #12261e; color: #56d364; box-shadow: 0 0 8px #23863640; }
+.stack-item.t-min    { border-color: #8957e5; background: #1b1327; color: #d2a8ff; box-shadow: 0 0 8px #8957e540; }
+.stack-item.t-same   { border-color: #ffa657; background: #2d1a00; color: #ffa657; }
+.stag { font-size: 0.65rem; font-weight: 700; padding: 1px 5px; border-radius: 4px; margin-left: 6px; background: #1f6feb; color: #fff; }
+
+/* Return value box */
+.return-box { margin: 12px 0; padding: 10px 18px; border-radius: 8px; display: flex; align-items: center; gap: 14px; }
+.return-box.rb-min { background: #1b1327; border: 1px solid #8957e5; }
+.return-box.rb-top { background: #0c1f3d; border: 1px solid #1f6feb; }
+.rb-label { font-size: 0.75rem; color: #6e7681; }
+.rb-val   { font-size: 1.3rem; font-weight: 700; }
+.rb-min .rb-val { color: #d2a8ff; }
+.rb-top .rb-val { color: #58a6ff; }
+
+/* Legend */
+.legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: #8b949e; }
+.leg-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+/* Code panel */
+.code-block { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 14px 16px; font-size: 0.8rem; line-height: 2.0; }
+.code-line { display: block; padding: 1px 8px; border-radius: 4px; border-left: 2px solid transparent; white-space: pre; }
+.code-line.active { background: #1c2128; border-left-color: #58a6ff; }
+.kw { color: #ff7b72; } .fn { color: #d2a8ff; } .cm { color: #8b949e; font-style: italic; }
+.nu { color: #79c0ff; } .var { color: #ffa657; } .str { color: #a5d6ff; }
+
+.vars-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+.var-cell { background: #161b22; border: 1px solid #21262d; border-radius: 6px; padding: 8px 10px; }
+.var-name { font-size: 0.68rem; color: #6e7681; margin-bottom: 2px; }
+.var-val  { font-size: 0.82rem; color: #c9d1d9; word-break: break-all; }
+
+/* Changes panel */
+.changes-panel { border: 1px solid #ffa657; border-radius: 8px; margin-top: 14px; overflow: hidden; }
+.changes-title { background: #2d1a00; color: #ffa657; font-size: 0.72rem; font-weight: 700; padding: 5px 12px; letter-spacing: 0.05em; }
+.change-row { padding: 8px 12px; border-top: 1px solid #30363d; font-size: 0.78rem; }
+.change-code { color: #58a6ff; font-weight: 700; margin-bottom: 4px; }
+.change-was span { text-decoration: line-through; color: #da3633; }
+.change-now span { color: #56d364; font-weight: 700; }
+.change-why { color: #6e7681; font-style: italic; margin-top: 4px; }
+.no-change { padding: 8px 12px; font-size: 0.78rem; color: #484f58; font-style: italic; }
+
+footer { border-top: 1px solid #30363d; padding: 10px 28px; display: flex; flex-direction: column; align-items: center; gap: 6px; flex-shrink: 0; }
+.footer-row { display: flex; align-items: center; gap: 12px; width: 100%; justify-content: center; }
+.btn { background: #21262d; border: 1px solid #30363d; color: #c9d1d9; padding: 6px 20px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-family: inherit; }
+.btn:hover:not(:disabled) { background: #30363d; }
+.btn:disabled { opacity: 0.3; cursor: default; }
+#explain { background: #161b22; border: 1px solid #21262d; border-radius: 8px; padding: 8px 14px; font-size: 0.8rem; color: #c9d1d9; max-width: 680px; text-align: center; line-height: 1.5; flex: 1; }
+#step-counter { font-size: 0.78rem; color: #6e7681; white-space: nowrap; }
+.kb-hint { font-size: 0.68rem; color: #484f58; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>LC 155 — Min Stack</h1>
+  <span class="badge easy">Easy</span>
+  <span class="badge time-badge">All ops O(1)</span>
+  <span class="badge space-badge">Space O(n)</span>
+</header>
+<div id="progress"><div id="progress-bar"></div></div>
+
+<main>
+  <div class="panel">
+    <div id="phase-pill" class="phase-pill"></div>
+    <div id="viz-content"></div>
+  </div>
+  <div class="panel">
+    <div class="code-block">
+<span class="code-line" data-ln="1"><span class="kw">class</span> <span class="fn">MinStack</span>:</span>
+<span class="code-line" data-ln="2">    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="var">self</span>):</span>
+<span class="code-line" data-ln="3">        <span class="var">self</span>.<span class="var">stack</span>     = []</span>
+<span class="code-line" data-ln="4">        <span class="var">self</span>.<span class="var">min_stack</span> = []</span>
+<span class="code-line" data-ln="5"> </span>
+<span class="code-line" data-ln="6">    <span class="kw">def</span> <span class="fn">push</span>(<span class="var">self</span>, <span class="var">val</span>: int):</span>
+<span class="code-line" data-ln="7">        <span class="var">self</span>.<span class="var">stack</span>.<span class="fn">append</span>(<span class="var">val</span>)</span>
+<span class="code-line" data-ln="8">        <span class="var">cur_min</span> = <span class="var">val</span> <span class="kw">if not</span> <span class="var">self</span>.<span class="var">min_stack</span> \</span>
+<span class="code-line" data-ln="9">                  <span class="kw">else</span> <span class="fn">min</span>(<span class="var">val</span>, <span class="var">self</span>.<span class="var">min_stack</span>[-<span class="nu">1</span>])</span>
+<span class="code-line" data-ln="10">        <span class="var">self</span>.<span class="var">min_stack</span>.<span class="fn">append</span>(<span class="var">cur_min</span>)</span>
+<span class="code-line" data-ln="11"> </span>
+<span class="code-line" data-ln="12">    <span class="kw">def</span> <span class="fn">pop</span>(<span class="var">self</span>):</span>
+<span class="code-line" data-ln="13">        <span class="var">self</span>.<span class="var">stack</span>.<span class="fn">pop</span>()</span>
+<span class="code-line" data-ln="14">        <span class="var">self</span>.<span class="var">min_stack</span>.<span class="fn">pop</span>()</span>
+<span class="code-line" data-ln="15"> </span>
+<span class="code-line" data-ln="16">    <span class="kw">def</span> <span class="fn">top</span>(<span class="var">self</span>) -> int:</span>
+<span class="code-line" data-ln="17">        <span class="kw">return</span> <span class="var">self</span>.<span class="var">stack</span>[-<span class="nu">1</span>]</span>
+<span class="code-line" data-ln="18"> </span>
+<span class="code-line" data-ln="19">    <span class="kw">def</span> <span class="fn">getMin</span>(<span class="var">self</span>) -> int:</span>
+<span class="code-line" data-ln="20">        <span class="kw">return</span> <span class="var">self</span>.<span class="var">min_stack</span>[-<span class="nu">1</span>]</span>
+    </div>
+    <div class="vars-grid" id="vars-grid"></div>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-row">
+    <button class="btn" id="btn-prev" onclick="go(-1)">← Prev</button>
+    <div id="explain">—</div>
+    <span id="step-counter"></span>
+    <button class="btn" id="btn-next" onclick="go(1)">Next →</button>
+  </div>
+  <div class="kb-hint">keyboard: ← → arrow keys</div>
+</footer>
+
+<script>
+// Operations sequence: push(5), push(3), push(7), push(2), getMin→2, pop, getMin→3, top→7
+const STEPS = [
+  {
+    phase: 'Step 1 — Problem setup  (line 1)',
+    ln: 1, op: 'MinStack()', opCls: 'op-init',
+    main: [], min: [], pushTop: false, minHl: false, returnVal: null,
+    changes: [],
+    vars: { 'self.stack': '[]', 'self.min_stack': '[]', val: '—', cur_min: '—' },
+    explain: 'Design challenge: a stack that also returns the minimum in O(1). The naive approach — scanning the whole stack — is O(n). The trick: keep a second stack (min_stack) that mirrors the main stack, but each position stores "the minimum among all items at or below this level".'
+  },
+  {
+    phase: 'Step 2 — __init__  (lines 2–4)',
+    ln: 3, op: '__init__()', opCls: 'op-init',
+    main: [], min: [], pushTop: false, minHl: false, returnVal: null,
+    changes: [],
+    vars: { 'self.stack': '[]', 'self.min_stack': '[]', val: '—', cur_min: '—' },
+    explain: 'Initialize both stacks as empty lists. They will always have the same length — every push appends to both, every pop removes from both.'
+  },
+  {
+    phase: 'Step 3 — push(5)  (lines 7–10)',
+    ln: 10, op: 'push(5)', opCls: 'op-push',
+    main: [5], min: [5], pushTop: true, minHl: false, returnVal: null,
+    changes: [
+      { code: 'self.stack.append(5)', was: 'stack  →  []', now: 'stack  →  [5]',
+        why: 'Append 5 to the main stack as usual.' },
+      { code: 'self.min_stack.append(5)', was: 'min_stack  →  []', now: 'min_stack  →  [5]',
+        why: 'min_stack is empty, so cur_min = val = 5. The minimum of [5] is 5.' }
+    ],
+    vars: { 'self.stack': '[5]', 'self.min_stack': '[5]', val: '5', cur_min: '5' },
+    explain: 'ARROW CHANGED ↷: push(5). min_stack is empty, so cur_min = val = 5. Both stacks get 5. At this level, the minimum is 5.'
+  },
+  {
+    phase: 'Step 4 — push(3)  (lines 7–10)',
+    ln: 10, op: 'push(3)', opCls: 'op-push',
+    main: [5, 3], min: [5, 3], pushTop: true, minHl: false, returnVal: null,
+    changes: [
+      { code: 'self.stack.append(3)', was: 'stack  →  [5]', now: 'stack  →  [5, 3]',
+        why: 'Append 3 to main stack.' },
+      { code: 'self.min_stack.append(min(3, 5))', was: 'min_stack  →  [5]', now: 'min_stack  →  [5, 3]',
+        why: 'min(3, prev_min=5) = 3. The minimum of [5, 3] is 3. min_stack top drops.' }
+    ],
+    vars: { 'self.stack': '[5, 3]', 'self.min_stack': '[5, 3]', val: '3', cur_min: '3' },
+    explain: 'ARROW CHANGED ↷: push(3). cur_min = min(3, min_stack[-1]=5) = 3. Both stacks get 3. Now the min_stack top says "the minimum below here is 3".'
+  },
+  {
+    phase: 'Step 5 — push(7)  (lines 7–10)',
+    ln: 10, op: 'push(7)', opCls: 'op-push',
+    main: [5, 3, 7], min: [5, 3, 3], pushTop: true, sameMin: true, minHl: false, returnVal: null,
+    changes: [
+      { code: 'self.stack.append(7)', was: 'stack  →  [5, 3]', now: 'stack  →  [5, 3, 7]',
+        why: 'Append 7 to main stack.' },
+      { code: 'self.min_stack.append(min(7, 3))', was: 'min_stack  →  [5, 3]', now: 'min_stack  →  [5, 3, 3]',
+        why: 'min(7, prev_min=3) = 3. Even though 7 is pushed, the minimum below does NOT change — still 3. min_stack gets 3 again, not 7. This is the KEY insight.' }
+    ],
+    vars: { 'self.stack': '[5, 3, 7]', 'self.min_stack': '[5, 3, 3]', val: '7', cur_min: '3' },
+    explain: 'ARROW CHANGED ↷: push(7). cur_min = min(7, 3) = 3. Main stack gets 7 but min_stack gets 3 again — because the minimum of [5,3,7] is still 3. min_stack always records "minimum of everything at or below this level".'
+  },
+  {
+    phase: 'Step 6 — push(2)  (lines 7–10)',
+    ln: 10, op: 'push(2)', opCls: 'op-push',
+    main: [5, 3, 7, 2], min: [5, 3, 3, 2], pushTop: true, minHl: false, returnVal: null,
+    changes: [
+      { code: 'self.stack.append(2)', was: 'stack  →  [5, 3, 7]', now: 'stack  →  [5, 3, 7, 2]',
+        why: 'Append 2 to main stack.' },
+      { code: 'self.min_stack.append(min(2, 3))', was: 'min_stack  →  [5, 3, 3]', now: 'min_stack  →  [5, 3, 3, 2]',
+        why: 'min(2, prev_min=3) = 2. New global minimum — min_stack gets 2.' }
+    ],
+    vars: { 'self.stack': '[5, 3, 7, 2]', 'self.min_stack': '[5, 3, 3, 2]', val: '2', cur_min: '2' },
+    explain: 'ARROW CHANGED ↷: push(2). cur_min = min(2, 3) = 2. New global minimum. Both stacks get 2. Stack = [5,3,7,2], min_stack = [5,3,3,2].'
+  },
+  {
+    phase: 'Step 7 — getMin()  (lines 19–20)',
+    ln: 20, op: 'getMin() → 2', opCls: 'op-getmin',
+    main: [5, 3, 7, 2], min: [5, 3, 3, 2], pushTop: false, minHl: true, returnVal: 2, returnCls: 'rb-min',
+    changes: [],
+    vars: { 'self.stack': '[5, 3, 7, 2]', 'self.min_stack': '[5, 3, 3, 2]', val: '—', cur_min: '—' },
+    explain: 'getMin() → return self.min_stack[-1] = 2. O(1) — just a list index. No scanning needed because min_stack[-1] always holds the current minimum.'
+  },
+  {
+    phase: 'Step 8 — pop()  (lines 13–14)',
+    ln: 14, op: 'pop()', opCls: 'op-pop',
+    main: [5, 3, 7], min: [5, 3, 3], pushTop: false, minHl: false, returnVal: null,
+    changes: [
+      { code: 'self.stack.pop()', was: 'stack  →  [5, 3, 7, 2]', now: 'stack  →  [5, 3, 7]',
+        why: 'Remove the top element (2) from main stack.' },
+      { code: 'self.min_stack.pop()', was: 'min_stack  →  [5, 3, 3, 2]', now: 'min_stack  →  [5, 3, 3]',
+        why: 'Remove the corresponding min entry. They always stay in sync — same size at all times.' }
+    ],
+    vars: { 'self.stack': '[5, 3, 7]', 'self.min_stack': '[5, 3, 3]', val: '—', cur_min: '—' },
+    explain: 'ARROW CHANGED ↷: pop(). Both stacks pop simultaneously. The 2 is gone from both. The key invariant is maintained: min_stack always has the same length as stack.'
+  },
+  {
+    phase: 'Step 9 — getMin() after pop  (lines 19–20)',
+    ln: 20, op: 'getMin() → 3', opCls: 'op-getmin',
+    main: [5, 3, 7], min: [5, 3, 3], pushTop: false, minHl: true, returnVal: 3, returnCls: 'rb-min',
+    changes: [],
+    vars: { 'self.stack': '[5, 3, 7]', 'self.min_stack': '[5, 3, 3]', val: '—', cur_min: '—' },
+    explain: 'getMin() → min_stack[-1] = 3. After popping 2, the new minimum is correctly 3 — this was already stored in min_stack[2]. We never had to search; the answer was pre-computed at push time.'
+  },
+  {
+    phase: 'Step 10 — top()  (lines 16–17)',
+    ln: 17, op: 'top() → 7', opCls: 'op-top',
+    main: [5, 3, 7], min: [5, 3, 3], pushTop: false, minHl: false, returnVal: 7, returnCls: 'rb-top',
+    changes: [],
+    vars: { 'self.stack': '[5, 3, 7]', 'self.min_stack': '[5, 3, 3]', val: '—', cur_min: '—' },
+    explain: 'top() → return self.stack[-1] = 7. O(1). Notice that min_stack[-1] = 3 ≠ 7 — top() and getMin() return different things. top() = most recently pushed; getMin() = smallest ever pushed that hasn\'t been popped.'
+  },
+  {
+    phase: 'Step 11 — Summary',
+    ln: 1, op: 'All ops O(1)', opCls: 'op-init',
+    main: [5, 3, 7], min: [5, 3, 3], pushTop: false, minHl: false, returnVal: null,
+    changes: [],
+    vars: { 'self.stack': '[5, 3, 7]', 'self.min_stack': '[5, 3, 3]', val: '—', cur_min: '—' },
+    explain: 'All four operations are O(1). The price: O(n) extra space for min_stack. The key invariant: min_stack[i] = min(stack[0..i]). This invariant is maintained at every push and restored automatically on every pop.'
+  }
+];
+
+let cur = 0;
+
+function opBadgeH(s) {
+  return `<div class="op-row"><span class="op-badge ${s.opCls}">${s.op}</span></div>`;
+}
+
+function dualStackH(s) {
+  function colH(arr, title, isMin) {
+    let items = '';
+    for (let i = arr.length - 1; i >= 0; i--) {
+      const isTop = i === arr.length - 1;
+      let cls = 'stack-item';
+      if (isTop && s.pushTop) cls += ' t-push';
+      else if (isTop && isMin && s.minHl) cls += ' t-min';
+      else if (isMin && isTop && s.sameMin) cls += ' t-same';
+      items += `<div class="${cls}">${arr[i]}${isTop ? '<span class="stag">top</span>' : ''}</div>`;
+    }
+    if (arr.length === 0) items = '<span class="stack-empty">[ empty ]</span>';
+    return `<div class="stack-col">
+      <div class="stack-col-title">${title}</div>
+      <div class="stack-container">${items}</div>
+    </div>`;
+  }
+  return `<div class="dual-stack">${colH(s.main, 'self.stack', false)}${colH(s.min, 'self.min_stack', true)}</div>`;
+}
+
+function returnBoxH(s) {
+  if (s.returnVal === null) return '';
+  return `<div class="return-box ${s.returnCls}">
+    <span class="rb-label">return value</span>
+    <span class="rb-val">${s.returnVal}</span>
+  </div>`;
+}
+
+function changesH(changes) {
+  if (!changes || changes.length === 0) {
+    return `<div class="changes-panel"><div class="changes-title">↷ STACK OPERATIONS THIS STEP</div>
+      <div class="no-change">No stack mutation — reading or setup only.</div></div>`;
+  }
+  const rows = changes.map(c => `<div class="change-row">
+    <div class="change-code">${c.code}</div>
+    <div class="change-was">was: <span>${c.was}</span></div>
+    <div class="change-now">now: <span>${c.now}</span></div>
+    <div class="change-why">${c.why}</div>
+  </div>`).join('');
+  return `<div class="changes-panel"><div class="changes-title">↷ STACK OPERATIONS THIS STEP</div>${rows}</div>`;
+}
+
+function render() {
+  const s = STEPS[cur];
+  document.getElementById('phase-pill').textContent = s.phase;
+
+  let html = opBadgeH(s);
+  html += dualStackH(s);
+  html += returnBoxH(s);
+  html += changesH(s.changes);
+  html += `<div class="legend">
+    <div class="legend-item"><div class="leg-dot" style="background:#12261e;border:1px solid #238636"></div>Just pushed</div>
+    <div class="legend-item"><div class="leg-dot" style="background:#1b1327;border:1px solid #8957e5"></div>Current min (getMin highlight)</div>
+    <div class="legend-item"><div class="leg-dot" style="background:#2d1a00;border:1px solid #ffa657"></div>Same min stored again (7 pushed over 3)</div>
+  </div>`;
+
+  document.getElementById('viz-content').innerHTML = html;
+
+  document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active'));
+  const al = document.querySelector(`.code-line[data-ln="${s.ln}"]`);
+  if (al) al.classList.add('active');
+
+  document.getElementById('vars-grid').innerHTML = Object.entries(s.vars).map(([k, v]) =>
+    `<div class="var-cell"><div class="var-name">${k}</div><div class="var-val">${v}</div></div>`
+  ).join('');
+
+  document.getElementById('explain').textContent = s.explain;
+  document.getElementById('step-counter').textContent = `${cur + 1} / ${STEPS.length}`;
+  document.getElementById('progress-bar').style.width = ((cur + 1) / STEPS.length * 100) + '%';
+  document.getElementById('btn-prev').disabled = cur === 0;
+  document.getElementById('btn-next').disabled = cur === STEPS.length - 1;
+}
+
+function go(dir) {
+  const n = cur + dir;
+  if (n >= 0 && n < STEPS.length) { cur = n; render(); }
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1);
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   go(-1);
+});
+render();
+</script>
+</body>
+</html>

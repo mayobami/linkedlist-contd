@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LC 22 — Generate Parentheses</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0d1117; color: #c9d1d9; font-family: 'Consolas','Monaco',monospace; min-height: 100vh; display: flex; flex-direction: column; }
+
+header { padding: 16px 28px; border-bottom: 1px solid #30363d; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+header h1 { font-size: 1.15rem; color: #e6edf3; }
+.badge { padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+.medium { background: #3d2b00; color: #ffa657; }
+.time-badge { background: #0c1f3d; color: #58a6ff; }
+.space-badge { background: #1b1327; color: #d2a8ff; }
+
+#progress { height: 3px; background: #21262d; flex-shrink: 0; }
+#progress-bar { height: 3px; background: #58a6ff; transition: width 0.25s; }
+
+main { display: grid; grid-template-columns: 1fr 1fr; flex: 1; min-height: 0; }
+.panel { border-right: 1px solid #30363d; padding: 18px 22px; overflow-y: auto; }
+.panel:last-child { border-right: none; }
+.phase-pill { display: inline-block; background: #21262d; color: #58a6ff; border: 1px solid #30363d; border-radius: 20px; padding: 4px 14px; font-size: 0.78rem; margin-bottom: 14px; }
+
+/* Current string display */
+.str-label { font-size: 0.72rem; color: #6e7681; margin-bottom: 6px; letter-spacing: 0.03em; }
+.str-display { font-size: 2rem; font-weight: 700; letter-spacing: 0.1em; min-height: 56px; display: flex; align-items: center; padding: 8px 0; }
+.str-display .po { color: #58a6ff; }   /* '(' = blue */
+.str-display .pc { color: #ffa657; }   /* ')' = orange */
+.str-empty { color: #484f58; font-style: italic; font-size: 1rem; }
+
+/* Counter row */
+.counter-row { display: flex; gap: 10px; margin: 12px 0; flex-wrap: wrap; }
+.counter { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 8px 14px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.counter-label { font-size: 0.68rem; color: #6e7681; }
+.counter-val { font-size: 1.1rem; font-weight: 700; }
+.ctr-open  .counter-val { color: #58a6ff; }
+.ctr-close .counter-val { color: #ffa657; }
+.ctr-n     .counter-val { color: #d2a8ff; }
+.counter.ctr-len .counter-val { color: #56d364; }
+
+/* Condition checks */
+.cond-label { font-size: 0.72rem; color: #6e7681; margin: 10px 0 6px; letter-spacing: 0.03em; }
+.cond-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.cond-item { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 7px 12px; font-size: 0.8rem; display: flex; align-items: center; justify-content: space-between; }
+.cond-item.cond-yes { border-color: #238636; background: #12261e; }
+.cond-item.cond-no  { border-color: #da3633; background: #2d1317; opacity: 0.6; }
+.cond-txt { color: #c9d1d9; }
+.cond-badge { font-size: 0.7rem; font-weight: 700; padding: 1px 8px; border-radius: 4px; }
+.cond-item.cond-yes .cond-badge { background: #238636; color: #fff; }
+.cond-item.cond-no  .cond-badge { background: #da3633; color: #fff; }
+
+/* Action badge */
+.action-row { margin: 8px 0 12px; }
+.action-badge { display: inline-flex; align-items: center; gap: 8px; padding: 5px 16px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; }
+.act-open { background: #0c1f3d; color: #58a6ff; border: 1px solid #1f6feb; }
+.act-close { background: #2d1a00; color: #ffa657; border: 1px solid #ffa657; }
+.act-base { background: #0d2b0d; color: #56d364; border: 1px solid #238636; }
+.act-back { background: #2d1317; color: #da3633; border: 1px solid #da3633; }
+.act-done { background: #1b1327; color: #d2a8ff; border: 1px solid #8957e5; }
+.act-setup { background: #161b22; color: #8b949e; border: 1px solid #30363d; }
+
+/* Call stack / path trail */
+.path-label { font-size: 0.72rem; color: #6e7681; margin: 10px 0 6px; letter-spacing: 0.03em; }
+.path-trail { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-bottom: 12px; font-size: 0.78rem; }
+.trail-node { background: #161b22; border: 1px solid #21262d; border-radius: 4px; padding: 3px 8px; color: #8b949e; }
+.trail-node.trail-curr { border-color: #58a6ff; color: #58a6ff; background: #0c1f3d; font-weight: 700; }
+.trail-arrow { color: #484f58; }
+.trail-add-open { color: #58a6ff; font-weight: 700; }
+.trail-add-close { color: #ffa657; font-weight: 700; }
+
+/* Results list */
+.result-label { font-size: 0.72rem; color: #6e7681; margin: 10px 0 6px; letter-spacing: 0.03em; }
+.result-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.result-item { background: #0d2b0d; border: 1px solid #238636; border-radius: 6px; padding: 5px 12px; font-size: 0.9rem; font-weight: 700; color: #56d364; }
+.result-empty { color: #484f58; font-size: 0.82rem; font-style: italic; }
+.result-item.new { box-shadow: 0 0 10px #23863660; }
+
+/* Code panel */
+.code-block { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 14px 16px; font-size: 0.8rem; line-height: 2.0; }
+.code-line { display: block; padding: 1px 8px; border-radius: 4px; border-left: 2px solid transparent; white-space: pre; }
+.code-line.active { background: #1c2128; border-left-color: #58a6ff; }
+.kw { color: #ff7b72; } .fn { color: #d2a8ff; } .cm { color: #8b949e; font-style: italic; }
+.nu { color: #79c0ff; } .var { color: #ffa657; } .str { color: #a5d6ff; }
+
+.vars-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+.var-cell { background: #161b22; border: 1px solid #21262d; border-radius: 6px; padding: 8px 10px; }
+.var-name { font-size: 0.68rem; color: #6e7681; margin-bottom: 2px; }
+.var-val  { font-size: 0.82rem; color: #c9d1d9; word-break: break-all; }
+
+footer { border-top: 1px solid #30363d; padding: 10px 28px; display: flex; flex-direction: column; align-items: center; gap: 6px; flex-shrink: 0; }
+.footer-row { display: flex; align-items: center; gap: 12px; width: 100%; justify-content: center; }
+.btn { background: #21262d; border: 1px solid #30363d; color: #c9d1d9; padding: 6px 20px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-family: inherit; }
+.btn:hover:not(:disabled) { background: #30363d; }
+.btn:disabled { opacity: 0.3; cursor: default; }
+#explain { background: #161b22; border: 1px solid #21262d; border-radius: 8px; padding: 8px 14px; font-size: 0.8rem; color: #c9d1d9; max-width: 680px; text-align: center; line-height: 1.5; flex: 1; }
+#step-counter { font-size: 0.78rem; color: #6e7681; white-space: nowrap; }
+.kb-hint { font-size: 0.68rem; color: #484f58; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>LC 22 — Generate Parentheses</h1>
+  <span class="badge medium">Medium</span>
+  <span class="badge time-badge">Time O(4ⁿ/√n)</span>
+  <span class="badge space-badge">Space O(n)</span>
+</header>
+<div id="progress"><div id="progress-bar"></div></div>
+
+<main>
+  <div class="panel">
+    <div id="phase-pill" class="phase-pill"></div>
+    <div id="viz-content"></div>
+  </div>
+  <div class="panel">
+    <div class="code-block">
+<span class="code-line" data-ln="1"><span class="kw">def</span> <span class="fn">generateParenthesis</span>(<span class="var">n</span>: int):</span>
+<span class="code-line" data-ln="2">    <span class="var">result</span> = []</span>
+<span class="code-line" data-ln="3"> </span>
+<span class="code-line" data-ln="4">    <span class="kw">def</span> <span class="fn">backtrack</span>(<span class="var">s</span>, <span class="var">open</span>, <span class="var">close</span>):</span>
+<span class="code-line" data-ln="5">        <span class="kw">if</span> <span class="fn">len</span>(<span class="var">s</span>) == <span class="nu">2</span> * <span class="var">n</span>:</span>
+<span class="code-line" data-ln="6">            <span class="var">result</span>.<span class="fn">append</span>(<span class="var">s</span>)   <span class="cm"># valid!</span></span>
+<span class="code-line" data-ln="7">            <span class="kw">return</span></span>
+<span class="code-line" data-ln="8">        <span class="kw">if</span> <span class="var">open</span> < <span class="var">n</span>:</span>
+<span class="code-line" data-ln="9">            <span class="fn">backtrack</span>(<span class="var">s</span> + <span class="str">'('</span>, <span class="var">open</span>+<span class="nu">1</span>, <span class="var">close</span>)</span>
+<span class="code-line" data-ln="10">        <span class="kw">if</span> <span class="var">close</span> < <span class="var">open</span>:</span>
+<span class="code-line" data-ln="11">            <span class="fn">backtrack</span>(<span class="var">s</span> + <span class="str">')'</span>, <span class="var">open</span>, <span class="var">close</span>+<span class="nu">1</span>)</span>
+<span class="code-line" data-ln="12"> </span>
+<span class="code-line" data-ln="13">    <span class="fn">backtrack</span>(<span class="str">''</span>, <span class="nu">0</span>, <span class="nu">0</span>)</span>
+<span class="code-line" data-ln="14">    <span class="kw">return</span> <span class="var">result</span></span>
+    </div>
+    <div class="vars-grid" id="vars-grid"></div>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-row">
+    <button class="btn" id="btn-prev" onclick="go(-1)">← Prev</button>
+    <div id="explain">—</div>
+    <span id="step-counter"></span>
+    <button class="btn" id="btn-next" onclick="go(1)">Next →</button>
+  </div>
+  <div class="kb-hint">keyboard: ← → arrow keys</div>
+</footer>
+
+<script>
+// n=2  →  result: ["(())", "()()"]
+const N = 2;
+
+const STEPS = [
+  {
+    phase: 'Step 1 — Problem setup  (line 1)',
+    ln: 1,
+    s: '', open: 0, close: 0,
+    canOpen: true, canClose: false,
+    action: 'setup', actionLabel: 'n = 2',
+    trail: [],
+    result: [], newResult: false,
+    vars: { n: '2', s: '""', open: '0', close: '0', result: '[]' },
+    explain: 'Generate all valid combinations of n=2 pairs of parentheses. The insight: at any point, we can add "(" if we haven\'t used all n opens yet, and we can add ")" only if close < open — this ensures we never close more than we\'ve opened. DFS tries every valid choice.'
+  },
+  {
+    phase: 'Step 2 — backtrack("", 0, 0)  (lines 13, 5, 8)',
+    ln: 8,
+    s: '', open: 0, close: 0,
+    canOpen: true, canClose: false,
+    action: 'open', actionLabel: 'Add "(" — open (0) < n (2)',
+    trail: ['""(0,0)'],
+    result: [], newResult: false,
+    vars: { n: '2', s: '""', open: '0', close: '0', result: '[]' },
+    explain: 'backtrack("", 0, 0). len("")=0 ≠ 4, not base case. open=0 < n=2 → can add "(". close=0 < open=0? No → cannot add ")". We choose to add "(" (DFS always tries "(" first).'
+  },
+  {
+    phase: 'Step 3 — backtrack("(", 1, 0)  (lines 5, 8–9)',
+    ln: 9,
+    s: '(', open: 1, close: 0,
+    canOpen: true, canClose: false,
+    action: 'open', actionLabel: 'Add "(" — open (1) < n (2)',
+    trail: ['""(0,0)', '+(', '"("(1,0)'],
+    result: [], newResult: false,
+    vars: { n: '2', s: '"("', open: '1', close: '0', result: '[]' },
+    explain: 'backtrack("(", 1, 0). len=1 ≠ 4. open=1 < 2 → can add "(". close=0 < open=1? NO → cannot add ")" yet (would give "()" but nothing to close with). Choosing "(" first.'
+  },
+  {
+    phase: 'Step 4 — backtrack("((", 2, 0)  (lines 5, 8, 10–11)',
+    ln: 11,
+    s: '((', open: 2, close: 0,
+    canOpen: false, canClose: true,
+    action: 'close', actionLabel: 'Add ")" — close (0) < open (2)',
+    trail: ['""(0,0)', '+(', '"("(1,0)', '+(', '"(("(2,0)'],
+    result: [], newResult: false,
+    vars: { n: '2', s: '"(("', open: '2', close: '0', result: '[]' },
+    explain: 'backtrack("((", 2, 0). open=2 = n=2 → CANNOT add "(". close=0 < open=2 → CAN add ")". Only one valid choice: add ")".'
+  },
+  {
+    phase: 'Step 5 — backtrack("(()", 2, 1)  (lines 5, 8, 10–11)',
+    ln: 11,
+    s: '(()', open: 2, close: 1,
+    canOpen: false, canClose: true,
+    action: 'close', actionLabel: 'Add ")" — close (1) < open (2)',
+    trail: ['""(0,0)', '+(', '"("(1,0)', '+(', '"(("(2,0)', '+)', '"(()"(2,1)'],
+    result: [], newResult: false,
+    vars: { n: '2', s: '"(()"', open: '2', close: '1', result: '[]' },
+    explain: 'backtrack("(()", 2, 1). open=2=n → can\'t add "(". close=1 < open=2 → add ")". Still must close one more open paren.'
+  },
+  {
+    phase: 'Step 6 — backtrack("(())", 2, 2) → BASE CASE  (lines 5–7)',
+    ln: 6,
+    s: '(())', open: 2, close: 2,
+    canOpen: false, canClose: false,
+    action: 'base', actionLabel: 'BASE CASE: len=4 = 2×n → append "(())"',
+    trail: ['""(0,0)', '+(', '"("(1,0)', '+(', '"(("(2,0)', '+)', '"(()"(2,1)', '+)', '"(())"(2,2)✓'],
+    result: ['(())'], newResult: true,
+    vars: { n: '2', s: '"(())"', open: '2', close: '2', result: '["(())"]' },
+    explain: 'backtrack("(())", 2, 2). len("(())")=4 = 2×2=4 → BASE CASE. result.append("(())"). This is valid: every "(" is matched. Return back up the call stack.'
+  },
+  {
+    phase: 'Step 7 — Backtrack to "(" → add ")"  (lines 7, 10–11)',
+    ln: 11,
+    s: '(', open: 1, close: 0,
+    canOpen: true, canClose: false,
+    action: 'back', actionLabel: 'Backtrack to "(" → now try ")" branch',
+    trail: ['"("(1,0)', '← back here'],
+    result: ['(())'], newResult: false,
+    vars: { n: '2', s: '"("', open: '1', close: '0', result: '["(())"]' },
+    explain: 'We return from the "((" branch. Back at backtrack("(", 1, 0). We already tried adding "(". Now check: close=0 < open=1 → YES, can add ")". Backtracking = undo the last choice, try the next.'
+  },
+  {
+    phase: 'Step 8 — backtrack("()", 1, 1)  (lines 5, 8–9)',
+    ln: 9,
+    s: '()', open: 1, close: 1,
+    canOpen: true, canClose: false,
+    action: 'open', actionLabel: 'Add "(" — open (1) < n (2)',
+    trail: ['"("(1,0)', '+)', '"()"(1,1)'],
+    result: ['(())'], newResult: false,
+    vars: { n: '2', s: '"()"', open: '1', close: '1', result: '["(())"]' },
+    explain: 'backtrack("()", 1, 1). open=1 < 2 → can add "(". close=1 < open=1? NO (1 < 1 is false) → cannot add ")" here. Only valid choice: "(".'
+  },
+  {
+    phase: 'Step 9 — backtrack("()(", 2, 1)  (lines 5, 8, 10–11)',
+    ln: 11,
+    s: '()(', open: 2, close: 1,
+    canOpen: false, canClose: true,
+    action: 'close', actionLabel: 'Add ")" — close (1) < open (2)',
+    trail: ['"()"(1,1)', '+(', '"()("(2,1)'],
+    result: ['(())'], newResult: false,
+    vars: { n: '2', s: '"()("', open: '2', close: '1', result: '["(())"]' },
+    explain: 'backtrack("()(", 2, 1). open=2=n → can\'t add "(". close=1 < open=2 → add ")". Only one valid choice here.'
+  },
+  {
+    phase: 'Step 10 — backtrack("()()", 2, 2) → BASE CASE  (lines 5–7)',
+    ln: 6,
+    s: '()()', open: 2, close: 2,
+    canOpen: false, canClose: false,
+    action: 'base', actionLabel: 'BASE CASE: len=4 = 2×n → append "()()"',
+    trail: ['"()("(2,1)', '+)', '"()()"(2,2)✓'],
+    result: ['(())', '()()'], newResult: true,
+    vars: { n: '2', s: '"()()"', open: '2', close: '2', result: '["(())", "()()"]' },
+    explain: 'backtrack("()()", 2, 2). len=4 = 2×2 → BASE CASE. result.append("()()"). Call stack unwinds — all branches exhausted.'
+  },
+  {
+    phase: 'Step 11 — Return result  (line 14)',
+    ln: 14,
+    s: '', open: 0, close: 0,
+    canOpen: false, canClose: false,
+    action: 'done', actionLabel: 'return ["(())", "()()"]',
+    trail: [],
+    result: ['(())', '()()'], newResult: false,
+    vars: { n: '2', s: '—', open: '—', close: '—', result: '["(())", "()()"]' },
+    explain: 'Return result = ["(())", "()()"]. For n=2 there are 2 valid combinations (Catalan number C₂=2). For n=3: C₃=5 combinations. The two guards — open < n and close < open — together ensure every string generated is valid. Time O(4ⁿ/√n) (Catalan). Space O(n) call depth.'
+  }
+];
+
+let cur = 0;
+
+function strH(s) {
+  if (!s) return `<span class="str-empty">""  (empty string)</span>`;
+  return s.split('').map(c =>
+    c === '(' ? `<span class="po">(</span>` : `<span class="pc">)</span>`
+  ).join('');
+}
+
+function condH(s) {
+  const openOk = s.open < N;
+  const closeOk = s.close < s.open;
+  return `<div class="cond-label">Conditions checked this call:</div>
+  <div class="cond-row">
+    <div class="cond-item ${openOk ? 'cond-yes' : 'cond-no'}">
+      <span class="cond-txt">open (${s.open}) &lt; n (${N}) → can add <span style="color:#58a6ff;font-weight:700">"("</span></span>
+      <span class="cond-badge">${openOk ? 'YES' : 'NO'}</span>
+    </div>
+    <div class="cond-item ${closeOk ? 'cond-yes' : 'cond-no'}">
+      <span class="cond-txt">close (${s.close}) &lt; open (${s.open}) → can add <span style="color:#ffa657;font-weight:700">")"</span></span>
+      <span class="cond-badge">${closeOk ? 'YES' : 'NO'}</span>
+    </div>
+  </div>`;
+}
+
+function actionH(s) {
+  if (s.action === 'setup') return '';
+  const cls = {open:'act-open', close:'act-close', base:'act-base', back:'act-back', done:'act-done'}[s.action] || 'act-setup';
+  const icon = {open:'+(', close:'+)', base:'✓', back:'↩', done:'→'}[s.action] || '';
+  return `<div class="action-row"><span class="action-badge ${cls}">${icon}&nbsp;${s.actionLabel}</span></div>`;
+}
+
+function trailH(trail) {
+  if (!trail || trail.length === 0) return '';
+  const items = trail.map((t, i) => {
+    if (t.startsWith('+')) {
+      const cls = t.startsWith('+(') ? 'trail-add-open' : 'trail-add-close';
+      return `<span class="${cls}">${t}</span>`;
+    }
+    const isCurr = i === trail.length - 1 || (trail[i+1] && trail[i+1] === '← back here');
+    return `<span class="trail-node${isCurr ? ' trail-curr' : ''}">${t}</span>`;
+  });
+  return `<div class="path-label">Recursion path:</div>
+  <div class="path-trail">${items.join('<span class="trail-arrow"> </span>')}</div>`;
+}
+
+function resultListH(s) {
+  const items = s.result.length === 0
+    ? '<span class="result-empty">[ empty — no valid strings yet ]</span>'
+    : s.result.map((r, i) => {
+        const isNew = s.newResult && i === s.result.length - 1;
+        return `<div class="result-item${isNew ? ' new' : ''}">${r}</div>`;
+      }).join('');
+  return `<div class="result-label">result list (${s.result.length} found):</div>
+  <div class="result-list">${items}</div>`;
+}
+
+function render() {
+  const s = STEPS[cur];
+  document.getElementById('phase-pill').textContent = s.phase;
+
+  let html = '';
+  html += `<div class="str-label">Current string  s:</div>
+  <div class="str-display">${strH(s.s)}</div>`;
+  html += `<div class="counter-row">
+    <div class="counter ctr-open"><div class="counter-label">open</div><div class="counter-val">${s.open}</div></div>
+    <div class="counter ctr-close"><div class="counter-label">close</div><div class="counter-val">${s.close}</div></div>
+    <div class="counter ctr-n"><div class="counter-label">n</div><div class="counter-val">${N}</div></div>
+    <div class="counter ctr-len"><div class="counter-label">len(s)</div><div class="counter-val">${s.s.length}</div></div>
+    <div class="counter ctr-n"><div class="counter-label">target</div><div class="counter-val">${2*N}</div></div>
+  </div>`;
+  html += condH(s);
+  html += actionH(s);
+  html += trailH(s.trail);
+  html += resultListH(s);
+
+  document.getElementById('viz-content').innerHTML = html;
+
+  document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active'));
+  const al = document.querySelector(`.code-line[data-ln="${s.ln}"]`);
+  if (al) al.classList.add('active');
+
+  document.getElementById('vars-grid').innerHTML = Object.entries(s.vars).map(([k, v]) =>
+    `<div class="var-cell"><div class="var-name">${k}</div><div class="var-val">${v}</div></div>`
+  ).join('');
+
+  document.getElementById('explain').textContent = s.explain;
+  document.getElementById('step-counter').textContent = `${cur + 1} / ${STEPS.length}`;
+  document.getElementById('progress-bar').style.width = ((cur + 1) / STEPS.length * 100) + '%';
+  document.getElementById('btn-prev').disabled = cur === 0;
+  document.getElementById('btn-next').disabled = cur === STEPS.length - 1;
+}
+
+function go(dir) {
+  const n = cur + dir;
+  if (n >= 0 && n < STEPS.length) { cur = n; render(); }
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1);
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   go(-1);
+});
+render();
+</script>
+</body>
+</html>
