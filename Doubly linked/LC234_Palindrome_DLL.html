@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LeetCode 234 — Palindrome Linked List (DLL)</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0d1117;color:#c9d1d9;min-height:100vh;display:flex;flex-direction:column;}
+.header{background:linear-gradient(135deg,#161b22,#21262d);padding:18px 28px;border-bottom:1px solid #30363d;display:flex;align-items:center;justify-content:space-between;}
+.header h1{font-size:19px;color:#58a6ff;font-weight:700;}
+.badges{display:flex;gap:8px;}
+.badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.b-easy{background:#0d2b0d;color:#56d364;}
+.b-time{background:#0d2b0d;color:#56d364;}
+.b-space{background:#0c2233;color:#58a6ff;}
+.b-dll{background:#1b1327;color:#d2a8ff;border:1px solid #8957e5;}
+.progress{height:3px;background:#21262d;}
+.progress-fill{height:100%;background:#56d364;transition:width .4s ease;}
+.main{display:grid;grid-template-columns:1fr 1fr;flex:1;overflow:hidden;}
+.panel{padding:20px;overflow-y:auto;border-right:1px solid #21262d;}
+.panel-title{font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:16px;}
+.phase-pill{display:inline-block;padding:4px 12px;background:#161b22;border:1px solid #30363d;border-radius:16px;font-size:12px;color:#8b949e;margin-bottom:14px;}
+.list-label{font-size:12px;color:#6e7681;margin-bottom:10px;font-style:italic;}
+.dll-list{display:flex;align-items:center;flex-wrap:wrap;margin-bottom:6px;}
+.node-col{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.ptr-row{height:20px;display:flex;align-items:center;justify-content:center;gap:3px;}
+.ptr-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;white-space:nowrap;}
+.ptr-tag.left{background:#1f6feb;color:#fff;}
+.ptr-tag.right{background:#6e40c9;color:#fff;}
+.ptr-tag.tail{background:#6e40c9;color:#fff;}
+.node-box{width:52px;height:52px;border:2px solid #30363d;border-radius:8px;background:#161b22;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;transition:all .35s ease;}
+.node-box.t-left{border-color:#1f6feb;background:#0c1f3d;box-shadow:0 0 14px rgba(31,111,235,.35);}
+.node-box.t-right{border-color:#8957e5;background:#1b1327;box-shadow:0 0 14px rgba(137,87,229,.35);}
+.node-box.t-match{border-color:#56d364;background:#0d2b0d;box-shadow:0 0 14px rgba(86,211,100,.35);}
+.node-box.t-both{border-color:#ffa657;background:#2d1a00;box-shadow:0 0 14px rgba(255,166,87,.35);}
+.dll-conn{display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 1px;}
+.conn-fwd{display:flex;align-items:center;gap:2px;margin-bottom:2px;}
+.conn-bwd{display:flex;align-items:center;gap:2px;margin-top:2px;}
+.conn-lbl{font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;white-space:nowrap;}
+.lbl-left{background:#0c1f3d;color:#58a6ff;border:1px solid #1f6feb;}
+.lbl-right{background:#1b1327;color:#d2a8ff;border:1px solid #8957e5;}
+.arr-r{font-size:16px;color:#484f58;line-height:1;}
+.arr-l{font-size:16px;color:#484f58;line-height:1;}
+.arr-r.hot,.arr-l.hot{color:#ffa657;}
+.null-end{display:flex;flex-direction:column;justify-content:center;font-size:12px;color:#484f58;margin-left:2px;gap:6px;}
+.result-box{margin-top:14px;padding:12px 16px;border-radius:8px;font-size:16px;font-weight:700;text-align:center;}
+.result-true{background:#0d2b0d;border:2px solid #56d364;color:#56d364;}
+.result-false{background:#2d1317;border:2px solid #da3633;color:#da3633;}
+.compare-row{margin-top:12px;padding:10px 14px;border:1px solid #21262d;border-radius:6px;font-size:13px;}
+.cmp-label{font-size:10px;color:#8b949e;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.cmp-pair{display:flex;align-items:center;gap:12px;font-family:monospace;}
+.cmp-val{width:40px;height:40px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;}
+.cmp-match{background:#0d2b0d;border:2px solid #56d364;color:#56d364;}
+.cmp-no{background:#2d1317;border:2px solid #da3633;color:#da3633;}
+.cmp-vs{color:#6e7681;font-size:12px;}
+.cmp-result{font-size:12px;margin-left:8px;}
+.no-change{margin-top:14px;padding:8px 14px;border:1px solid #21262d;border-radius:6px;font-size:11px;color:#484f58;font-style:italic;}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;padding-top:16px;border-top:1px solid #21262d;}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:#8b949e;}
+.legend-dot{width:12px;height:12px;border-radius:3px;}
+.code-block{background:#0a0e13;border:1px solid #21262d;border-radius:8px;padding:14px;font-family:'Cascadia Code',Consolas,monospace;font-size:12.5px;line-height:2.1;}
+.code-line{padding:1px 8px;border-radius:4px;border-left:3px solid transparent;white-space:pre;transition:all .3s;}
+.code-line.active{background:rgba(86,211,100,.08);border-left-color:#56d364;}
+.kw{color:#ff7b72;}.fn{color:#d2a8ff;}.cm{color:#6e7681;font-style:italic;}.nu{color:#f78166;}.var{color:#79c0ff;}
+.vars-section{margin-top:20px;}
+.vars-grid{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;align-items:center;margin-top:10px;}
+.var-name{font-family:monospace;color:#79c0ff;font-size:13px;}
+.var-val{font-family:monospace;font-size:12px;background:#0a0e13;border:1px solid #21262d;padding:3px 10px;border-radius:4px;color:#a5d6ff;}
+.var-val.null-val{color:#484f58;}
+.bottom{border-top:1px solid #21262d;padding:14px 24px;display:flex;align-items:center;gap:14px;}
+.explain-box{flex:1;background:#161b22;border:1px solid #30363d;border-left:3px solid #56d364;border-radius:4px;padding:12px 16px;font-size:13px;line-height:1.75;color:#c9d1d9;min-height:56px;}
+.step-num{font-size:12px;color:#6e7681;white-space:nowrap;}
+.btn{padding:8px 20px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700;transition:all .2s;}
+.btn:disabled{opacity:.3;cursor:not-allowed;}
+.btn-prev{background:#21262d;color:#c9d1d9;border:1px solid #30363d;}
+.btn-prev:not(:disabled):hover{background:#30363d;}
+.btn-next{background:#238636;color:#fff;}
+.btn-next:not(:disabled):hover{background:#2ea043;}
+.key-hint{font-size:11px;color:#484f58;text-align:center;padding:4px;border-top:1px solid #21262d;}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>LeetCode 234 — Palindrome Linked List (Doubly Linked List)</h1>
+  <div class="badges">
+    <span class="badge b-easy">Easy</span>
+    <span class="badge b-time">⏱ O(n)</span>
+    <span class="badge b-space">💾 O(1)</span>
+    <span class="badge b-dll">⇄ DLL</span>
+  </div>
+</div>
+<div class="progress"><div class="progress-fill" id="prog"></div></div>
+<div class="main">
+  <div class="panel">
+    <div class="panel-title">Visualization — Input: [1⇄2⇄2⇄1]</div>
+    <div id="vizContent"></div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#1f6feb;"></div>left (front pointer)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#8957e5;"></div>right (back pointer)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ffa657;"></div>both meet</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#56d364;"></div>matched pair</div>
+      <div class="legend-item" style="margin-top:4px;width:100%;color:#6e7681;font-size:11px;">DLL superpower: right moves backwards via .prev — no reversal needed!</div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">Code</div>
+    <div class="code-block">
+      <div class="code-line" data-ln="0"><span class="kw">def</span> <span class="fn">isPalindrome</span>(head):</div>
+      <div class="code-line" data-ln="1">    <span class="kw">if not</span> head <span class="kw">or not</span> head.next:</div>
+      <div class="code-line" data-ln="2">        <span class="kw">return True</span></div>
+      <div class="code-line" data-ln="3"> </div>
+      <div class="code-line" data-ln="4">    <span class="cm"># Find the tail</span></div>
+      <div class="code-line" data-ln="5">    <span class="var">tail</span> = head</div>
+      <div class="code-line" data-ln="6">    <span class="kw">while</span> <span class="var">tail</span>.next:</div>
+      <div class="code-line" data-ln="7">        <span class="var">tail</span> = <span class="var">tail</span>.next</div>
+      <div class="code-line" data-ln="8"> </div>
+      <div class="code-line" data-ln="9">    <span class="cm"># Two-pointer from both ends</span></div>
+      <div class="code-line" data-ln="10">    <span class="var">left</span>, <span class="var">right</span> = head, <span class="var">tail</span></div>
+      <div class="code-line" data-ln="11">    <span class="kw">while</span> <span class="var">left</span> != <span class="var">right</span> <span class="kw">and</span> <span class="var">left</span>.prev != <span class="var">right</span>:</div>
+      <div class="code-line" data-ln="12">        <span class="kw">if</span> <span class="var">left</span>.val != <span class="var">right</span>.val:</div>
+      <div class="code-line" data-ln="13">            <span class="kw">return False</span></div>
+      <div class="code-line" data-ln="14">        <span class="var">left</span> = <span class="var">left</span>.next</div>
+      <div class="code-line" data-ln="15">        <span class="var">right</span> = <span class="var">right</span>.prev   <span class="cm"># ← DLL superpower</span></div>
+      <div class="code-line" data-ln="16">    <span class="kw">return True</span></div>
+    </div>
+    <div class="vars-section">
+      <div class="panel-title">Variables</div>
+      <div class="vars-grid" id="varsGrid"></div>
+    </div>
+  </div>
+</div>
+<div class="bottom">
+  <button class="btn btn-prev" id="btnP" onclick="go(-1)">← Prev</button>
+  <div class="explain-box" id="explain"></div>
+  <span class="step-num" id="stepNum"></span>
+  <button class="btn btn-next" id="btnN" onclick="go(1)">Next →</button>
+</div>
+<div class="key-hint">Keyboard: ← → arrow keys to navigate</div>
+
+<script>
+const STEPS=[
+  {
+    phase:"Step 0 — Problem Setup", ln:0,
+    nodes:[{v:1,t:''},{v:2,t:''},{v:2,t:''},{v:1,t:''}],
+    arrs:[null,null,null],
+    label:"Input DLL: 1 ⇄ 2 ⇄ 2 ⇄ 1  — is it a palindrome?",
+    vars:{left:'—',right:'—'},changes:[],
+    cmp:null,
+    explain:"In SLL you would: find middle → reverse second half → compare → restore. With DLL, you skip ALL of that. Use left from head, right from tail, walk inward — right.prev does what reversal used to do. No mutation of the list."
+  },
+  {
+    phase:"Step 1 — Find the tail  (lines 5–7)", ln:7,
+    nodes:[{v:1,t:''},{v:2,t:''},{v:2,t:''},{v:1,t:'t-right',p:['tail']}],
+    arrs:[null,null,null],
+    label:"Walk tail forward until tail.next = null → tail lands on node(1) at position 4",
+    vars:{left:'—',right:'—'},changes:[],cmp:null,
+    explain:"We walk tail = tail.next repeatedly until tail.next is None. tail stops at the last node (value 1). This is the starting position for the right pointer. No arrows changed — we just moved a variable."
+  },
+  {
+    phase:"Step 2 — Initialize left and right  (line 10)", ln:10,
+    nodes:[{v:1,t:'t-left',p:['left']},{v:2,t:''},{v:2,t:''},{v:1,t:'t-right',p:['right']}],
+    arrs:[{fwd:{lbl:'left.next→',hot:false},bwd:null},{fwd:null,bwd:null},{fwd:null,bwd:{lbl:'←right.prev',hot:false}}],
+    label:"left = head (position 1),  right = tail (position 4).  Both pointers live!",
+    vars:{left:'node(1) val=1',right:'node(1) val=1'},changes:[],cmp:null,
+    explain:"left starts at the front (blue), right starts at the back (purple). They will walk inward toward each other. left advances via .next (forward). right retreats via .prev (backward) — this is the DLL superpower."
+  },
+  {
+    phase:"Step 3 — Check left.val == right.val  (line 12)", ln:12,
+    nodes:[{v:1,t:'t-left',p:['left']},{v:2,t:''},{v:2,t:''},{v:1,t:'t-right',p:['right']}],
+    arrs:[{fwd:{lbl:'left.next→',hot:false},bwd:null},{fwd:null,bwd:null},{fwd:null,bwd:{lbl:'←right.prev',hot:false}}],
+    label:"Compare: left.val=1  vs  right.val=1",
+    vars:{left:'node(1) val=1',right:'node(1) val=1'},changes:[],
+    cmp:{lv:1,rv:1,match:true},
+    explain:"left.val = 1, right.val = 1. They match! We do NOT return False. Next: advance left forward and retreat right backward."
+  },
+  {
+    phase:"Step 4 — Advance left and retreat right  (lines 14–15)", ln:15,
+    nodes:[{v:1,t:'t-match'},{v:2,t:'t-left',p:['left']},{v:2,t:'t-right',p:['right']}  ,{v:1,t:'t-match'}],
+    arrs:[null,{fwd:{lbl:'left.next→',hot:false},bwd:{lbl:'←right.prev',hot:false}},null],
+    label:"left = left.next → node(2)  |  right = right.prev → node(2)  — closing in!",
+    vars:{left:'node(2) val=2',right:'node(2) val=2'},changes:[],cmp:null,
+    explain:"left advanced forward one step (via .next). right retreated backward one step (via .prev — the DLL pointer). The outer nodes (both value=1) are marked green as matched. left and right are now adjacent in the middle."
+  },
+  {
+    phase:"Step 5 — Check left.val == right.val  (line 12)", ln:12,
+    nodes:[{v:1,t:'t-match'},{v:2,t:'t-left',p:['left']},{v:2,t:'t-right',p:['right']},{v:1,t:'t-match'}],
+    arrs:[null,{fwd:{lbl:'left.next→',hot:false},bwd:{lbl:'←right.prev',hot:false}},null],
+    label:"Compare: left.val=2  vs  right.val=2",
+    vars:{left:'node(2) val=2',right:'node(2) val=2'},changes:[],
+    cmp:{lv:2,rv:2,match:true},
+    explain:"left.val = 2, right.val = 2. Match again! Now check the loop condition: left.next == right (they are adjacent). The condition `left.prev != right` is False (left.prev IS right after the next advance would cross them). Loop exits."
+  },
+  {
+    phase:"Step 6 — Loop exits: left.prev == right  (line 11)", ln:11,
+    nodes:[{v:1,t:'t-match'},{v:2,t:'t-match'},{v:2,t:'t-match'},{v:1,t:'t-match'}],
+    arrs:[null,null,null],
+    label:"left and right have met/crossed — all pairs checked. Return True ✓",
+    vars:{left:'node(2)',right:'node(2)'},changes:[],cmp:null,
+    explain:"The loop condition `left != right and left.prev != right` failed because left.prev == right (the pointers crossed). All pairs matched. Return True. The DLL is a palindrome — and we never reversed or mutated it."
+  },
+  {
+    phase:"Step 7 — return True  (line 16)", ln:16,
+    nodes:[{v:1,t:'t-match'},{v:2,t:'t-match'},{v:2,t:'t-match'},{v:1,t:'t-match'}],
+    arrs:[{fwd:{lbl:'',hot:false},bwd:{lbl:'',hot:false}},{fwd:{lbl:'',hot:false},bwd:{lbl:'',hot:false}},{fwd:{lbl:'',hot:false},bwd:{lbl:'',hot:false}}],
+    label:"✓ [1⇄2⇄2⇄1] IS a palindrome",
+    vars:{left:'node(2)',right:'node(2)'},changes:[],cmp:null,
+    result:true,
+    explain:"Return True. Compared 2 pairs (positions 1&4, then 2&3), all matched. Total work: O(n) to find tail + O(n/2) for comparisons = O(n). O(1) space. The list was never modified — no reversal, no mutation."
+  }
+];
+
+let cur=0;
+function nodeH(n){
+  const ptrs=(n.p||[]).map(l=>{
+    const cls=l==='left'?'left':l==='right'||l==='tail'?'right':'tail';
+    return`<span class="ptr-tag ${cls}">${l}</span>`;
+  }).join('');
+  const tc=(!n.t||n.t==='normal')?'':n.t;
+  return`<div class="node-col"><div class="ptr-row">${ptrs}</div><div class="node-box ${tc}">${n.v}</div></div>`;
+}
+function connH(a){
+  if(!a)return`<div class="dll-conn"><div class="conn-fwd"><span class="arr-r">→</span></div><div class="conn-bwd"><span class="arr-l">←</span></div></div>`;
+  const fR=a.fwd?`<span class="conn-lbl lbl-left">${a.fwd.lbl}</span><span class="arr-r${a.fwd.hot?' hot':''}">→</span>`:`<span class="arr-r">→</span>`;
+  const bR=a.bwd?`<span class="arr-l${a.bwd.hot?' hot':''}">←</span><span class="conn-lbl lbl-right">${a.bwd.lbl}</span>`:`<span class="arr-l">←</span>`;
+  return`<div class="dll-conn"><div class="conn-fwd">${fR}</div><div class="conn-bwd">${bR}</div></div>`;
+}
+function render(){
+  const s=STEPS[cur];
+  let lH=`<div class="list-label">${s.label}</div><div class="dll-list">`;
+  s.nodes.forEach((n,i)=>{lH+=nodeH(n);if(i<s.nodes.length-1)lH+=connH(s.arrs?s.arrs[i]:null);});
+  lH+=`<div class="null-end"><span>→null</span><span>null←</span></div></div>`;
+  if(s.cmp){
+    const mc=s.cmp.match;
+    lH+=`<div class="compare-row"><div class="cmp-label">Comparison this step</div><div class="cmp-pair"><div class="cmp-val ${mc?'cmp-match':'cmp-no'}">${s.cmp.lv}</div><span class="cmp-vs">left.val  vs  right.val</span><div class="cmp-val ${mc?'cmp-match':'cmp-no'}">${s.cmp.rv}</div><span class="cmp-result">${mc?'✓ Match — continue':'✗ Mismatch — return False'}</span></div></div>`;
+  }
+  if(s.result!==undefined){
+    lH+=`<div class="result-box ${s.result?'result-true':'result-false'}">${s.result?'✓  True — Is a Palindrome':'✗  False — Not a Palindrome'}</div>`;
+  }
+  document.getElementById('vizContent').innerHTML=`<div class="phase-pill">${s.phase}</div>`+lH;
+  document.querySelectorAll('.code-line').forEach(e=>e.classList.remove('active'));
+  const al=document.querySelector(`.code-line[data-ln="${s.ln}"]`);
+  if(al)al.classList.add('active');
+  let vh='';
+  for(const[k,v] of Object.entries(s.vars))vh+=`<span class="var-name">${k}</span><span class="var-val${v==='—'?' null-val':''}">${v}</span>`;
+  document.getElementById('varsGrid').innerHTML=vh;
+  document.getElementById('explain').textContent=s.explain;
+  document.getElementById('stepNum').textContent=`Step ${cur+1} / ${STEPS.length}`;
+  document.getElementById('prog').style.width=`${((cur+1)/STEPS.length)*100}%`;
+  document.getElementById('btnP').disabled=cur===0;
+  document.getElementById('btnN').disabled=cur===STEPS.length-1;
+}
+function go(d){const n=cur+d;if(n>=0&&n<STEPS.length){cur=n;render();}}
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown')go(1);
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp')go(-1);
+});
+render();
+</script>
+</body>
+</html>

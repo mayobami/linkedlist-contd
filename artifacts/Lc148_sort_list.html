@@ -7,7 +7,6 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0d1117;color:#c9d1d9;min-height:100vh;display:flex;flex-direction:column;}
-
 .header{background:linear-gradient(135deg,#161b22,#21262d);padding:18px 28px;border-bottom:1px solid #30363d;display:flex;align-items:center;justify-content:space-between;}
 .header h1{font-size:20px;color:#58a6ff;font-weight:700;}
 .badges{display:flex;gap:8px;}
@@ -15,24 +14,32 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0d1117;color:#c9d1d9;m
 .b-med{background:#0c2233;color:#79c0ff;}
 .b-time{background:#0d2b0d;color:#56d364;}
 .b-space{background:#3d2b00;color:#ffa657;}
-
 .progress{height:3px;background:#21262d;}
 .progress-fill{height:100%;background:#d2a8ff;transition:width .4s ease;}
-
 .main{display:grid;grid-template-columns:1fr 1fr;flex:1;overflow:hidden;}
 .panel{padding:20px;overflow-y:auto;border-right:1px solid #21262d;}
 .panel-title{font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:16px;}
-
-/* ── Linked list ── */
-.list-section{margin-bottom:20px;}
+.phase-pill{display:inline-block;padding:4px 12px;background:#161b22;border:1px solid #30363d;border-radius:16px;font-size:12px;color:#8b949e;margin-bottom:6px;}
+.depth-pill{display:inline-block;padding:2px 10px;background:#0c1f3d;border:1px solid #1f6feb;border-radius:10px;font-size:11px;color:#58a6ff;margin-left:8px;}
 .list-label{font-size:12px;color:#6e7681;margin-bottom:8px;font-style:italic;}
-.list-sublabel{font-size:11px;color:#484f58;margin-bottom:6px;}
-.linked-list{display:flex;align-items:flex-end;flex-wrap:wrap;gap:0;min-height:80px;}
+/* Node row */
+.linked-list{display:flex;align-items:flex-end;flex-wrap:wrap;gap:0;min-height:80px;margin-bottom:4px;}
 .node-col{display:flex;flex-direction:column;align-items:center;gap:5px;}
 .node-label-row{height:22px;display:flex;gap:3px;align-items:center;justify-content:center;}
 .ptr-tag{font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;white-space:nowrap;}
 .ptr-tag.slow{background:#56d364;color:#0d1117;}
 .ptr-tag.fast{background:#da3633;color:#fff;}
+/* Labeled arrow connector */
+.conn-col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:12px;margin:0 1px;}
+.conn-lbl{font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;white-space:nowrap;min-height:14px;margin-bottom:2px;}
+.lbl-slow{background:#0d2b0d;color:#56d364;border:1px solid #56d364;}
+.lbl-fast{background:#2d1317;color:#da3633;border:1px solid #da3633;}
+.lbl-curr{background:#12261e;color:#56d364;border:1px solid #238636;}
+.lbl-cut{background:#2d1a00;color:#ffa657;border:1px solid #ffa657;}
+.conn-arr{font-size:18px;color:#484f58;line-height:1;}
+.conn-arr.hot{color:#ffa657;font-weight:900;}
+.null-marker{display:flex;align-items:flex-end;padding-bottom:14px;font-size:13px;color:#484f58;margin-left:2px;}
+/* Node types */
 .node-box{width:52px;height:52px;border:2px solid #30363d;border-radius:8px;background:#161b22;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;transition:all .35s ease;}
 .node-box.t-slow{border-color:#56d364;background:#0d2b0d;box-shadow:0 0 14px rgba(86,211,100,.3);}
 .node-box.t-fast{border-color:#da3633;background:#2d1317;box-shadow:0 0 14px rgba(218,54,51,.3);}
@@ -41,35 +48,40 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0d1117;color:#c9d1d9;m
 .node-box.t-right{border-color:#d2a8ff;background:#1b1327;box-shadow:0 0 14px rgba(210,168,255,.25);}
 .node-box.t-sorted{border-color:#56d364;background:#0d2b0d;box-shadow:0 0 14px rgba(86,211,100,.2);}
 .node-box.t-mid{border-color:#ffa657;background:#2d1a00;box-shadow:0 0 14px rgba(255,166,87,.3);}
-.arrow-col{display:flex;align-items:flex-end;padding-bottom:14px;font-size:20px;color:#484f58;margin:0 2px;}
-.null-marker{display:flex;align-items:flex-end;padding-bottom:16px;font-size:13px;color:#484f58;margin-left:4px;}
-.phase-pill{display:inline-block;padding:4px 12px;background:#161b22;border:1px solid #30363d;border-radius:16px;font-size:12px;color:#8b949e;margin-bottom:14px;}
-.depth-pill{display:inline-block;padding:2px 10px;background:#0c1f3d;border:1px solid #1f6feb;border-radius:10px;font-size:11px;color:#58a6ff;margin-left:8px;}
-
-/* Two-list side-by-side for merge */
-.two-lists{display:flex;gap:24px;flex-wrap:wrap;}
-.list-card{background:#161b22;border:1px solid #21262d;border-radius:8px;padding:12px 16px;}
+.node-box.t-curr{border-color:#238636;background:#12261e;box-shadow:0 0 14px rgba(35,134,54,.3);}
+/* Two-list cards */
+.two-lists{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:10px;}
+.list-card{background:#161b22;border:1px solid #21262d;border-radius:8px;padding:12px 14px;}
 .list-card-title{font-size:11px;color:#8b949e;margin-bottom:8px;font-weight:700;text-transform:uppercase;}
-
+.list-sublabel{font-size:11px;color:#484f58;margin-top:6px;}
+/* Merge result section */
+.merge-result{margin-top:10px;padding:10px 14px;background:#0a0e13;border:1px solid #21262d;border-radius:6px;}
+.merge-result-title{font-size:10px;color:#8b949e;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+/* Arrow-changes panel */
+.changes-panel{margin-top:14px;border:1px solid #ffa657;border-radius:8px;overflow:hidden;}
+.changes-hdr{background:#2d1a00;padding:7px 14px;font-size:10px;font-weight:700;color:#ffa657;text-transform:uppercase;letter-spacing:1px;}
+.change-row{padding:9px 14px;border-bottom:1px solid #21262d;font-size:12px;line-height:1.9;}
+.change-row:last-child{border-bottom:none;}
+.change-code{font-family:'Cascadia Code',Consolas,monospace;display:block;background:#0a0e13;padding:4px 10px;border-radius:4px;color:#d2a8ff;margin-bottom:5px;font-size:12px;}
+.was{color:#8b949e;}.was span{font-family:monospace;color:#da3633;text-decoration:line-through;}
+.now{color:#c9d1d9;}.now span{font-family:monospace;color:#56d364;font-weight:700;}
+.why{margin-top:4px;font-size:11px;color:#6e7681;font-style:italic;line-height:1.6;}
+.no-change{margin-top:12px;padding:8px 14px;border:1px solid #21262d;border-radius:6px;font-size:11px;color:#484f58;font-style:italic;}
 /* Legend */
-.legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;padding-top:16px;border-top:1px solid #21262d;}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid #21262d;}
 .legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:#8b949e;}
 .legend-dot{width:12px;height:12px;border-radius:3px;}
-
 /* Code */
 .code-block{background:#0a0e13;border:1px solid #21262d;border-radius:8px;padding:14px;font-family:'Cascadia Code','Consolas',monospace;font-size:12.5px;line-height:2;}
 .code-line{padding:1px 8px;border-radius:4px;border-left:3px solid transparent;white-space:pre;transition:all .3s ease;}
 .code-line.active{background:rgba(86,211,100,.08);border-left-color:#56d364;}
 .kw{color:#ff7b72;}.fn{color:#d2a8ff;}.cm{color:#6e7681;font-style:italic;}.nu{color:#f78166;}.var{color:#79c0ff;}
-
-/* Variables */
 .vars-section{margin-top:20px;}
 .vars-grid{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;align-items:center;margin-top:10px;}
 .var-name{font-family:monospace;color:#79c0ff;font-size:13px;}
 .var-val{font-family:monospace;font-size:12px;background:#0a0e13;border:1px solid #21262d;padding:3px 10px;border-radius:4px;color:#a5d6ff;}
 .var-val.null-val{color:#484f58;}
 .var-val.sorted-val{color:#56d364;}
-
 /* Bottom */
 .bottom{border-top:1px solid #21262d;padding:14px 24px;display:flex;align-items:center;gap:14px;}
 .explain-box{flex:1;background:#161b22;border:1px solid #30363d;border-left:3px solid #d2a8ff;border-radius:4px;padding:12px 16px;font-size:13px;line-height:1.7;color:#c9d1d9;min-height:56px;}
@@ -84,7 +96,6 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0d1117;color:#c9d1d9;m
 </style>
 </head>
 <body>
-
 <div class="header">
   <h1>LeetCode 148 &mdash; Sort List</h1>
   <div class="badges">
@@ -93,29 +104,24 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0d1117;color:#c9d1d9;m
     <span class="badge b-space">💾 O(log n)</span>
   </div>
 </div>
-
 <div class="progress"><div class="progress-fill" id="prog"></div></div>
-
 <div class="main">
-
-  <!-- LEFT: Visualization -->
   <div class="panel">
     <div class="panel-title">Visualization — Input: [4 → 2 → 1 → 3]</div>
     <div id="vizContent"></div>
     <div class="legend">
-      <div class="legend-item"><div class="legend-dot" style="background:#56d364;"></div> slow pointer</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#da3633;"></div> fast pointer</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#ffa657;"></div> slow &amp; fast / mid</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#58a6ff;"></div> left sublist</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#d2a8ff;"></div> right sublist</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#56d364;border:2px solid #56d364;"></div> sorted</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#56d364;"></div>slow pointer</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#da3633;"></div>fast pointer</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ffa657;"></div>slow &amp; fast / mid</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#58a6ff;"></div>left sublist</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#d2a8ff;"></div>right sublist</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#56d364;"></div>sorted</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ffa657;"></div>arrow changed ↷</div>
     </div>
   </div>
-
-  <!-- RIGHT: Code + Variables -->
   <div class="panel">
     <div class="panel-title">Code</div>
-    <div class="code-block" id="codeBlock">
+    <div class="code-block">
       <div class="code-line" data-ln="0"><span class="kw">def</span> <span class="fn">sortList</span>(head):</div>
       <div class="code-line" data-ln="1">    <span class="cm"># Base case</span></div>
       <div class="code-line" data-ln="2">    <span class="kw">if not</span> head <span class="kw">or not</span> head.next:</div>
@@ -129,7 +135,7 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0d1117;color:#c9d1d9;m
       <div class="code-line" data-ln="10"> </div>
       <div class="code-line" data-ln="11">    <span class="cm"># Split</span></div>
       <div class="code-line" data-ln="12">    <span class="var">second</span> = <span class="var">slow</span>.next</div>
-      <div class="code-line" data-ln="13">    <span class="var">slow</span>.next = <span class="kw">None</span></div>
+      <div class="code-line" data-ln="13">    <span class="var">slow</span>.next = <span class="kw">None</span>  <span class="cm"># ← cuts the list</span></div>
       <div class="code-line" data-ln="14"> </div>
       <div class="code-line" data-ln="15">    <span class="cm"># Recurse</span></div>
       <div class="code-line" data-ln="16">    <span class="var">left</span>  = sortList(head)</div>
@@ -146,14 +152,12 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0d1117;color:#c9d1d9;m
       <div class="code-line" data-ln="27">    <span class="var">curr</span>.next = <span class="var">left</span> <span class="kw">or</span> <span class="var">right</span></div>
       <div class="code-line" data-ln="28">    <span class="kw">return</span> <span class="var">dummy</span>.next</div>
     </div>
-
     <div class="vars-section">
       <div class="panel-title">Variables</div>
       <div class="vars-grid" id="varsGrid"></div>
     </div>
   </div>
 </div>
-
 <div class="bottom">
   <button class="btn btn-prev" id="btnP" onclick="go(-1)">← Prev</button>
   <div class="explain-box" id="explain"></div>
@@ -163,263 +167,231 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0d1117;color:#c9d1d9;m
 <div class="key-hint">Keyboard: ← → arrow keys to navigate</div>
 
 <script>
-// ─── Step data ────────────────────────────────────────────────────────────────
-// vizType: 'single' | 'two' | 'merge-step' | 'result'
-// For 'single': { list: [...nodes] }
-// For 'two': { left: [...nodes], right: [...nodes] }
-// For 'merge-step': { left: [...], right: [...], result: [...] }
-
+/* arrs entry for single-list steps: { lbl, cls, hot } or null */
 const STEPS = [
   {
-    phase: "Initial call: sortList([4,2,1,3])",
-    ln: 0, depth: 0,
-    vizType: 'single',
-    data: { label: "Input list", nodes: [
-      {v:4,t:''},{v:2,t:''},{v:1,t:''},{v:3,t:''}
-    ]},
-    vars: {slow:'null', fast:'null', context:'sortList([4,2,1,3])'},
-    explain: "sortList is called with the full list [4→2→1→3]. The algorithm is top-down merge sort: split the list in half, recursively sort each half, then merge the two sorted halves."
+    phase:"Step 0 — Problem Setup", ln:0, depth:0,
+    vizType:'single',
+    nodes:[{v:4,t:''},{v:2,t:''},{v:1,t:''},{v:3,t:''}],
+    arrs:[null,null,null],
+    label:"Input: [4 → 2 → 1 → 3]",
+    vars:{slow:'—',fast:'—',context:'sortList([4,2,1,3])'},
+    changes:[],
+    explain:"Top-down merge sort: split in half, recursively sort each half, merge. The split step (slow.next = None) is the key arrow change — it physically cuts the .next pointer to create two separate lists. The merge step sets curr.next repeatedly to stitch the sorted list together."
   },
   {
-    phase: "Find middle — initialize slow/fast",
-    ln: 6, depth: 0,
-    vizType: 'single',
-    data: { label: "slow = head(4), fast = head.next(2)", nodes: [
-      {v:4,t:'t-both',p:['slow','fast']},{v:2,t:''},{v:1,t:''},{v:3,t:''}
-    ]},
-    vars: {slow:'node(4)', fast:'node(2)', context:'sortList([4,2,1,3])'},
-    explain: "Initialize slow = head = node(4), fast = head.next = node(2). fast starts one step ahead — this ensures for even-length lists, slow stops at the left-center node, giving balanced splits."
+    phase:"Step 1 — slow = head, fast = head.next  (line 6)", ln:6, depth:0,
+    vizType:'single',
+    nodes:[{v:4,t:'t-both',p:['slow']},{v:2,t:'t-fast',p:['fast']},{v:1,t:''},{v:3,t:''}],
+    arrs:[{lbl:'slow.next→',cls:'lbl-slow',hot:false},{lbl:'fast.next→',cls:'lbl-fast',hot:false},null],
+    label:"slow = head(4),  fast = head.next(2).  fast starts ONE ahead — critical detail.",
+    vars:{slow:'node(4)',fast:'node(2)',context:'sortList([4,2,1,3])'},
+    changes:[],
+    explain:"slow and fast are both on node(4) initially — but fast starts at head.next = node(2), not head. This one-step offset is critical: for a 2-node list, it prevents slow from going too far. The arrow labels show what each pointer's .next currently is."
   },
   {
-    phase: "Find middle — advance pointers",
-    ln: 8, depth: 0,
-    vizType: 'single',
-    data: { label: "After: slow=node(2), fast=node(3). fast.next=null → stop.", nodes: [
-      {v:4,t:''},{v:2,t:'t-slow',p:['slow']},{v:1,t:''},{v:3,t:'t-fast',p:['fast']}
-    ]},
-    vars: {slow:'node(2)', fast:'node(3)', context:'sortList([4,2,1,3])'},
-    explain: "Advance once: slow=node(2), fast=node(1).next... wait — fast = fast.next.next = node(2).next.next = node(1).next = node(3). Now fast.next = null, so the while condition fails. slow stops at node(2) — the left-center."
+    phase:"Step 2 — Advance slow and fast  (lines 7–9)", ln:9, depth:0,
+    vizType:'single',
+    nodes:[{v:4,t:''},{v:2,t:'t-slow',p:['slow']},{v:1,t:''},{v:3,t:'t-fast',p:['fast']}],
+    arrs:[null,{lbl:'slow.next→',cls:'lbl-slow',hot:false},{lbl:'fast.next→',cls:'lbl-fast',hot:false}],
+    label:"After one loop: slow=node(2), fast=node(3). fast.next=null → loop stops.",
+    vars:{slow:'node(2)',fast:'node(3)',context:'sortList([4,2,1,3])'},
+    changes:[],
+    explain:"Loop ran once: slow = slow.next = node(2), fast = fast.next.next = node(1).next = node(3). Now check: fast=node(3) ✓ not null, but fast.next=null ✗ — loop stops. slow is at node(2), the left-center. The split will happen here."
   },
   {
-    phase: "Split the list",
-    ln: 12, depth: 0,
-    vizType: 'two',
-    data: {
-      leftLabel: "Left half (head → slow)",
-      rightLabel: "Right half (slow.next → end)",
-      left:  [{v:4,t:'t-left'},{v:2,t:'t-left'}],
-      right: [{v:1,t:'t-right'},{v:3,t:'t-right'}]
-    },
-    vars: {slow:'node(2)', second:'node(1)', context:'sortList([4,2,1,3])'},
-    explain: "second = slow.next = node(1). slow.next = None — the list is cut in two. Left: [4→2], Right: [1→3]. Now recursively sort each half."
+    phase:"Step 3 — slow.next = None  (line 13)  ← THE SPLIT", ln:13, depth:0,
+    vizType:'two',
+    left:[{v:4,t:'t-left'},{v:2,t:'t-left'}],
+    leftLabel:"Left [4→2]  (head → slow)",
+    right:[{v:1,t:'t-right'},{v:3,t:'t-right'}],
+    rightLabel:"Right [1→3]  (second = slow.next)",
+    vars:{slow:'node(2)',second:'node(1)',context:'sortList([4,2,1,3])'},
+    changes:[{
+      code:'second = slow.next   slow.next = None',
+      was:'slow.next → node(1)  (slow was the bridge)',
+      now:'slow.next → null  (list physically cut in two)',
+      why:'This is the most important arrow in merge sort. Setting slow.next = None severs the .next pointer that connected the two halves. Without this cut, recursing on "left" would still traverse the whole list. The cut creates two independent lists.'
+    }],
+    explain:"ARROW CHANGED ↷: slow.next used to point to node(1). Now it points to null. The list is physically cut. Left=[4→2], Right=[1→3]. This is the key split — two independent lists that we can recurse on separately."
   },
   {
-    phase: "Recurse left: sortList([4,2])",
-    ln: 16, depth: 1,
-    vizType: 'single',
-    data: { label: "Depth 1 — working on [4→2]", nodes: [
-      {v:4,t:'t-left'},{v:2,t:'t-left'}
-    ]},
-    vars: {slow:'null', fast:'null', context:'sortList([4,2])'},
-    explain: "Recursive call on left half [4→2]. List has 2+ nodes so we proceed. Initialize slow=node(4), fast=node(2)."
+    phase:"Step 4 — Recurse left: sortList([4,2])", ln:16, depth:1,
+    vizType:'single',
+    nodes:[{v:4,t:'t-left'},{v:2,t:'t-left'}],
+    arrs:[null],
+    label:"Depth 1 — sorting [4→2]",
+    vars:{slow:'—',fast:'—',context:'sortList([4,2])'},
+    changes:[],
+    explain:"Recursive call on [4→2]. slow=node(4), fast=node(2). fast.next=null → loop never runs. slow stays at node(4). Split: second=node(2), slow.next=None → [4] and [2]."
   },
   {
-    phase: "Find middle of [4,2]",
-    ln: 6, depth: 1,
-    vizType: 'single',
-    data: { label: "slow=node(4), fast=node(2). fast.next=null → stop immediately.", nodes: [
-      {v:4,t:'t-both',p:['slow','fast']},{v:2,t:'t-left'}
-    ]},
-    vars: {slow:'node(4)', fast:'node(2)', context:'sortList([4,2])'},
-    explain: "slow=node(4), fast=node(2). Check while condition: fast(2) is not null ✓, but fast.next is null ✗ — loop doesn't execute. slow stays at node(4), the left-center of [4,2]."
+    phase:"Step 5 — Split [4,2] → [4] and [2]  (line 13)", ln:13, depth:1,
+    vizType:'two',
+    left:[{v:4,t:'t-sorted'}], leftLabel:"Left [4]  (base case → returns itself)",
+    right:[{v:2,t:'t-sorted'}], rightLabel:"Right [2]  (base case → returns itself)",
+    vars:{slow:'node(4)',second:'node(2)',context:'sortList([4,2])'},
+    changes:[{
+      code:'slow.next = None',
+      was:'node(4).next → node(2)',
+      now:'node(4).next → null',
+      why:'Cut [4→2] into [4] and [2]. Both are single nodes — they hit the base case (not head.next) and return themselves. No further recursion needed.'
+    }],
+    explain:"ARROW CHANGED ↷: node(4).next cut to null. [4] and [2] are now independent single-node lists. Single nodes are trivially sorted — they return immediately from the base case."
   },
   {
-    phase: "Split [4,2] → [4] and [2]",
-    ln: 12, depth: 1,
-    vizType: 'two',
-    data: {
-      leftLabel: "Left: [4]", rightLabel: "Right: [2]",
-      left: [{v:4,t:'t-left'}], right: [{v:2,t:'t-right'}]
-    },
-    vars: {slow:'node(4)', second:'node(2)', context:'sortList([4,2])'},
-    explain: "second = slow.next = node(2). slow.next = None. Split into [4] and [2]. Both are single nodes — base cases! They return themselves immediately."
+    phase:"Step 6 — Merge [4] and [2] → [2→4]  (lines 20–28)", ln:23, depth:1,
+    vizType:'merge',
+    leftNodes:[{v:4,t:'t-left'}],
+    rightNodes:[{v:2,t:'t-right'}],
+    resultNodes:[{v:2,t:'t-sorted'},{v:4,t:'t-sorted'}],
+    detail:"Compare left.val=4 vs right.val=2.  2 < 4 → curr.next = right(2).  right exhausted → curr.next = left(4).",
+    vars:{left:'node(4)',right:'null (exhausted)',result:'[2→4]'},
+    changes:[{
+      code:'curr.next = right(2)   curr = curr.next   curr.next = left(4)',
+      was:'curr.next → null  (dummy tail)',
+      now:'curr.next → node(2) → node(4)  (sorted chain)',
+      why:'Two curr.next assignments per merge. First: curr.next = node(2) (smaller). Second: curr.next = node(4) (remainder from left). Each assignment wires one node into the sorted result chain.'
+    }],
+    explain:"ARROWS CHANGED ↷: Two .next assignments built [2→4]. The merge always wires the smaller value first. left half is now sorted as [2→4]. Now recurse on right half [1→3]."
   },
   {
-    phase: "Base cases: [4] → [4], [2] → [2]",
-    ln: 2, depth: 1,
-    vizType: 'two',
-    data: {
-      leftLabel: "sortList([4]) = [4] ✓", rightLabel: "sortList([2]) = [2] ✓",
-      left: [{v:4,t:'t-sorted'}], right: [{v:2,t:'t-sorted'}]
-    },
-    vars: {left:'node(4)', right:'node(2)', context:'merging [4] and [2]'},
-    explain: "Both single-node lists hit the base case (not head or not head.next → return head). They're trivially sorted. Now merge them."
+    phase:"Step 7 — Recurse right + merge [1,3] → [1→3]  (line 17)", ln:25, depth:1,
+    vizType:'merge',
+    leftNodes:[{v:1,t:'t-left'}],
+    rightNodes:[{v:3,t:'t-right'}],
+    resultNodes:[{v:1,t:'t-sorted'},{v:3,t:'t-sorted'}],
+    detail:"Split [1→3]: slow.next=None → [1],[3]. Merge: 1 ≤ 3 → take 1. right exhausted → append 3.",
+    vars:{slow:'node(1)',second:'node(3)',result:'[1→3]'},
+    changes:[{
+      code:'slow.next = None   then: curr.next = left(1)   curr.next = right(3)',
+      was:'node(1).next → node(3)  |  curr.next → null',
+      now:'node(1).next → null (split!)  |  result: node(1).next → node(3)',
+      why:'Split cuts node(1).next to null. Merge then re-wires: curr.next = node(1), then curr.next = node(3). The list is split and re-joined in sorted order. Right half sorted as [1→3].'
+    }],
+    explain:"ARROWS CHANGED ↷: Same pattern — split cuts one arrow, merge re-wires two. Right half [1→3] is sorted. Now the top-level call has both halves ready: left=[2→4], right=[1→3]. Final merge next."
   },
   {
-    phase: "Merge [4] and [2] → [2,4]",
-    ln: 21, depth: 1,
-    vizType: 'merge',
-    data: {
-      leftNodes:   [{v:4,t:'t-left'}],
-      rightNodes:  [{v:2,t:'t-right'}],
-      resultNodes: [{v:2,t:'t-sorted'},{v:4,t:'t-sorted'}],
-      detail: "2 < 4 → take 2. right exhausted → append 4. Result: [2→4]"
-    },
-    vars: {left:'node(4)', right:'exhausted', result:'[2→4]'},
-    explain: "Compare left.val=4 vs right.val=2. Since 2 < 4, take node(2). right is now null. Append remaining left: node(4). Merged result: [2→4]. Left half of original list is sorted!"
+    phase:"Step 8 — Final merge: compare 2 vs 1  (line 25)", ln:25, depth:0,
+    vizType:'merge',
+    leftNodes:[{v:2,t:'t-left'},{v:4,t:'t-left'}],
+    rightNodes:[{v:1,t:'t-right'},{v:3,t:'t-right'}],
+    resultNodes:[{v:1,t:'t-sorted'}],
+    detail:"left.val=2, right.val=1.  1 < 2 → take right.  curr.next = node(1).",
+    vars:{left:'node(2)→4',right:'node(3)',result:'[1]'},
+    changes:[{
+      code:'curr.next = right   right = right.next   curr = curr.next',
+      was:'curr.next → null',
+      now:'curr.next → node(1)',
+      why:'node(1) is smaller so we wire it in first. curr.next now points to node(1). curr advances. right advances to node(3). The result list grows one node at a time.'
+    }],
+    explain:"ARROW CHANGED ↷: curr.next now points to node(1). Merge always picks the smaller head. Result so far: [1]. Left still has [2→4], right now has [3]."
   },
   {
-    phase: "Recurse right: sortList([1,3])",
-    ln: 17, depth: 1,
-    vizType: 'single',
-    data: { label: "Depth 1 — working on [1→3]", nodes: [
-      {v:1,t:'t-right'},{v:3,t:'t-right'}
-    ]},
-    vars: {slow:'null', fast:'null', context:'sortList([1,3])'},
-    explain: "Now recurse on the right half [1→3]. Same process: find middle, split, sort, merge."
+    phase:"Step 9 — Final merge: compare 2 vs 3, then 3 vs 4, then append", ln:27, depth:0,
+    vizType:'merge',
+    leftNodes:[{v:4,t:'t-left'}],
+    rightNodes:[],
+    resultNodes:[{v:1,t:'t-sorted'},{v:2,t:'t-sorted'},{v:3,t:'t-sorted'}],
+    detail:"Take 2 (left), take 3 (right). right exhausted → curr.next = left(4).",
+    vars:{left:'node(4)',right:'null (exhausted)',result:'[1,2,3]'},
+    changes:[{
+      code:'curr.next=left(2)  curr.next=right(3)  curr.next=left(4)  [remainder]',
+      was:'result = [1]',
+      now:'result = [1→2→3→4]',
+      why:'Three more curr.next assignments: take 2 (2<3), take 3 (3<4), append remaining 4 via curr.next = left or right. Each wires one more node into the sorted chain.'
+    }],
+    explain:"ARROWS CHANGED ↷: Three more .next assignments complete the merge. 2→3→4 wired in sequence. right exhausted first, so the final curr.next = left (node 4) handles the remainder."
   },
   {
-    phase: "Find middle of [1,3] — split [1,3] → [1] and [3]",
-    ln: 12, depth: 1,
-    vizType: 'two',
-    data: {
-      leftLabel: "Left: [1]", rightLabel: "Right: [3]",
-      left: [{v:1,t:'t-left'}], right: [{v:3,t:'t-right'}]
-    },
-    vars: {slow:'node(1)', second:'node(3)', context:'sortList([1,3])'},
-    explain: "slow=node(1), fast=node(3). fast.next=null → loop doesn't run. Split: left=[1], right=[3]. Both are base cases. Merge them."
-  },
-  {
-    phase: "Merge [1] and [3] → [1,3]",
-    ln: 21, depth: 1,
-    vizType: 'merge',
-    data: {
-      leftNodes:   [{v:1,t:'t-left'}],
-      rightNodes:  [{v:3,t:'t-right'}],
-      resultNodes: [{v:1,t:'t-sorted'},{v:3,t:'t-sorted'}],
-      detail: "1 < 3 → take 1. left exhausted → append 3. Result: [1→3]"
-    },
-    vars: {left:'exhausted', right:'node(3)', result:'[1→3]'},
-    explain: "Compare left.val=1 vs right.val=3. Since 1 ≤ 3, take node(1). left is now null. Append remaining right: node(3). Right half sorted: [1→3]."
-  },
-  {
-    phase: "Final merge: [2,4] and [1,3]",
-    ln: 21, depth: 0,
-    vizType: 'merge-detail',
-    data: {
-      leftNodes:   [{v:2,t:'t-left'},{v:4,t:'t-left'}],
-      rightNodes:  [{v:1,t:'t-right'},{v:3,t:'t-right'}],
-      resultNodes: [],
-      detail: "Comparing 2 vs 1 → take 1..."
-    },
-    vars: {left:'node(2)→4', right:'node(1)→3', result:'[]'},
-    explain: "Back at the top level. Merge sorted [2→4] and [1→3]. Compare heads: left.val=2 vs right.val=1. Since 1 < 2, take node(1) from right."
-  },
-  {
-    phase: "Final merge — step by step",
-    ln: 22, depth: 0,
-    vizType: 'merge-detail',
-    data: {
-      leftNodes:   [{v:2,t:'t-left'},{v:4,t:'t-left'}],
-      rightNodes:  [{v:3,t:'t-right'}],
-      resultNodes: [{v:1,t:'t-sorted'}],
-      detail: "Took 1. Now compare 2 vs 3 → take 2..."
-    },
-    vars: {left:'node(2)→4', right:'node(3)', result:'[1]'},
-    explain: "Took 1 from right. Now compare left.val=2 vs right.val=3. Since 2 ≤ 3, take node(2) from left."
-  },
-  {
-    phase: "Final merge — step by step",
-    ln: 22, depth: 0,
-    vizType: 'merge-detail',
-    data: {
-      leftNodes:   [{v:4,t:'t-left'}],
-      rightNodes:  [{v:3,t:'t-right'}],
-      resultNodes: [{v:1,t:'t-sorted'},{v:2,t:'t-sorted'}],
-      detail: "Took 2. Now compare 4 vs 3 → take 3..."
-    },
-    vars: {left:'node(4)', right:'node(3)', result:'[1,2]'},
-    explain: "Took 2 from left. Compare left.val=4 vs right.val=3. Since 3 < 4, take node(3) from right."
-  },
-  {
-    phase: "Final merge — append remainder",
-    ln: 27, depth: 0,
-    vizType: 'merge-detail',
-    data: {
-      leftNodes:   [{v:4,t:'t-left'}],
-      rightNodes:  [],
-      resultNodes: [{v:1,t:'t-sorted'},{v:2,t:'t-sorted'},{v:3,t:'t-sorted'}],
-      detail: "right exhausted → curr.next = left (node 4)"
-    },
-    vars: {left:'node(4)', right:'null (exhausted)', result:'[1,2,3]'},
-    explain: "Took 3 from right. Right list is now exhausted. Execute curr.next = left or right → append remaining node(4). Merge complete!"
-  },
-  {
-    phase: "✓ Sorted: [1 → 2 → 3 → 4]",
-    ln: 28, depth: 0,
-    vizType: 'single',
-    data: { label: "Final result — all nodes sorted in O(n log n)", nodes: [
-      {v:1,t:'t-sorted'},{v:2,t:'t-sorted'},{v:3,t:'t-sorted'},{v:4,t:'t-sorted'}
-    ]},
-    vars: {result:'[1→2→3→4]', time:'O(n log n)', space:'O(log n)'},
-    explain: "Return dummy.next. Input [4,2,1,3] → Output [1,2,3,4]. Total: log₂(4) = 2 split levels, each doing O(n) merge work = O(n log n). Recursion stack depth = O(log n). ✓"
+    phase:"Step 10 — ✓ Sorted: [1 → 2 → 3 → 4]  (line 28)", ln:28, depth:0,
+    vizType:'single',
+    nodes:[{v:1,t:'t-sorted'},{v:2,t:'t-sorted'},{v:3,t:'t-sorted'},{v:4,t:'t-sorted'}],
+    arrs:[null,null,null],
+    label:"Final result — [1 → 2 → 3 → 4]",
+    vars:{result:'[1→2→3→4]',time:'O(n log n)',space:'O(log n)'},
+    changes:[],
+    explain:"Return dummy.next. Input [4,2,1,3] → Output [1,2,3,4]. Total arrow changes: 2 splits (each cuts one .next to null) + merge wires (each curr.next assignment re-connects). log₂(4)=2 levels × O(n) merge work = O(n log n). Recursion stack depth = O(log n)."
   }
 ];
 
-// ─── Rendering ────────────────────────────────────────────────────────────────
 let cur = 0;
 
-function makeNode(n) {
-  const ptrs = (n.p||[]).map(lbl => {
-    const cls = lbl === 'slow' ? 'slow' : 'fast';
-    return `<span class="ptr-tag ${cls}">${lbl}</span>`;
+function nodeH(n) {
+  const ptrs=(n.p||[]).map(l=>{
+    const cls=l==='slow'?'slow':'fast';
+    return`<span class="ptr-tag ${cls}">${l}</span>`;
   }).join('');
-  const ptrRow = `<div class="node-label-row">${ptrs}</div>`;
-  return `<div class="node-col">${ptrRow}<div class="node-box ${n.t||''}">${n.v}</div></div>`;
+  return`<div class="node-col"><div class="node-label-row">${ptrs}</div><div class="node-box ${n.t||''}">${n.v}</div></div>`;
 }
 
-function makeList(nodes, showNull=true) {
-  let h = `<div class="linked-list">`;
-  nodes.forEach((n,i) => {
-    h += makeNode(n);
-    if (i < nodes.length-1) h += `<div class="arrow-col">→</div>`;
+function connH(a) {
+  if(!a)return`<div class="conn-col"><div class="conn-lbl"></div><div class="conn-arr">→</div></div>`;
+  return`<div class="conn-col"><div class="conn-lbl ${a.cls}">${a.lbl}</div><div class="conn-arr${a.hot?' hot':''}">→</div></div>`;
+}
+
+function makeList(nodes, arrs) {
+  let h=`<div class="linked-list">`;
+  nodes.forEach((n,i)=>{
+    h+=nodeH(n);
+    if(i<nodes.length-1) h+=connH(arrs?arrs[i]:null);
   });
-  if (showNull && nodes.length) h += `<div class="null-marker">→ null</div>`;
-  h += `</div>`;
+  h+=`<div class="null-marker">→ null</div></div>`;
   return h;
 }
 
-function renderViz(s) {
-  const d = s.data;
-  let h = `<div class="phase-pill">${s.phase}${s.depth>0?`<span class="depth-pill">depth ${s.depth}</span>`:''}</div>`;
+function smallList(nodes) {
+  let h=`<div class="linked-list">`;
+  nodes.forEach((n,i)=>{
+    h+=nodeH(n);
+    if(i<nodes.length-1)h+=`<div class="conn-col"><div class="conn-lbl"></div><div class="conn-arr">→</div></div>`;
+  });
+  if(nodes.length)h+=`<div class="null-marker">→ null</div>`;
+  h+=`</div>`;
+  return h;
+}
 
-  if (s.vizType === 'single') {
-    h += `<div class="list-section"><div class="list-label">${d.label}</div>${makeList(d.nodes)}</div>`;
+function changesH(ch){
+  if(!ch||!ch.length)return`<div class="no-change">No .next pointers changed this step — reading or comparing values only.</div>`;
+  let h=`<div class="changes-panel"><div class="changes-hdr">↷ Arrow changes this step</div>`;
+  ch.forEach(c=>{
+    h+=`<div class="change-row"><code class="change-code">${c.code}</code><div class="was">Before: <span>${c.was}</span></div><div class="now">After:&nbsp; <span>${c.now}</span></div><div class="why">${c.why}</div></div>`;
+  });
+  return h+`</div>`;
+}
+
+function renderViz(s) {
+  const depth = s.depth>0?`<span class="depth-pill">depth ${s.depth}</span>`:'';
+  let h=`<div class="phase-pill">${s.phase}${depth}</div>`;
+
+  if(s.vizType==='single'){
+    if(s.label)h+=`<div class="list-label">${s.label}</div>`;
+    h+=makeList(s.nodes||[], s.arrs||null);
   }
-  else if (s.vizType === 'two') {
-    h += `<div class="two-lists">`;
-    h += `<div class="list-card"><div class="list-card-title">${d.leftLabel}</div>${makeList(d.left)}</div>`;
-    h += `<div class="list-card"><div class="list-card-title">${d.rightLabel}</div>${makeList(d.right)}</div>`;
-    h += `</div>`;
+  else if(s.vizType==='two'){
+    h+=`<div class="two-lists">`;
+    h+=`<div class="list-card"><div class="list-card-title">${s.leftLabel}</div>${smallList(s.left||[])}</div>`;
+    h+=`<div class="list-card"><div class="list-card-title">${s.rightLabel}</div>${smallList(s.right||[])}</div>`;
+    h+=`</div>`;
   }
-  else if (s.vizType === 'merge' || s.vizType === 'merge-detail') {
-    h += `<div class="two-lists" style="margin-bottom:14px;">`;
-    if (d.leftNodes.length)
-      h += `<div class="list-card"><div class="list-card-title">Left (sorted)</div>${makeList(d.leftNodes)}</div>`;
+  else if(s.vizType==='merge'){
+    h+=`<div class="two-lists">`;
+    if(s.leftNodes&&s.leftNodes.length)
+      h+=`<div class="list-card"><div class="list-card-title">Left (sorted half)</div>${smallList(s.leftNodes)}</div>`;
     else
-      h += `<div class="list-card"><div class="list-card-title">Left</div><div style="color:#484f58;font-size:12px;padding:4px;">exhausted</div></div>`;
-    if (d.rightNodes.length)
-      h += `<div class="list-card"><div class="list-card-title">Right (sorted)</div>${makeList(d.rightNodes)}</div>`;
+      h+=`<div class="list-card"><div class="list-card-title">Left</div><div style="color:#484f58;font-size:12px;padding:4px 0;">exhausted → null</div></div>`;
+    if(s.rightNodes&&s.rightNodes.length)
+      h+=`<div class="list-card"><div class="list-card-title">Right (sorted half)</div>${smallList(s.rightNodes)}</div>`;
     else
-      h += `<div class="list-card"><div class="list-card-title">Right</div><div style="color:#484f58;font-size:12px;padding:4px;">exhausted</div></div>`;
-    h += `</div>`;
-    if (d.resultNodes.length) {
-      h += `<div class="list-section"><div class="list-label">Merged so far:</div>${makeList(d.resultNodes)}</div>`;
-    } else {
-      h += `<div class="list-section"><div class="list-label">Merged so far: (empty)</div></div>`;
+      h+=`<div class="list-card"><div class="list-card-title">Right</div><div style="color:#484f58;font-size:12px;padding:4px 0;">exhausted → null</div></div>`;
+    h+=`</div>`;
+    if(s.resultNodes&&s.resultNodes.length){
+      h+=`<div class="merge-result"><div class="merge-result-title">Merged so far (curr.next wired these in order)</div>${smallList(s.resultNodes)}</div>`;
     }
-    if (d.detail) h += `<div class="list-sublabel" style="margin-top:4px;">→ ${d.detail}</div>`;
+    if(s.detail)h+=`<div class="list-sublabel" style="margin-top:8px;">↳ ${s.detail}</div>`;
   }
+
+  h+=changesH(s.changes);
   return h;
 }
 
@@ -427,34 +399,29 @@ function render() {
   const s = STEPS[cur];
   document.getElementById('vizContent').innerHTML = renderViz(s);
 
-  document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active'));
-  const al = document.querySelector(`.code-line[data-ln="${s.ln}"]`);
-  if (al) al.classList.add('active');
+  document.querySelectorAll('.code-line').forEach(el=>el.classList.remove('active'));
+  const al=document.querySelector(`.code-line[data-ln="${s.ln}"]`);
+  if(al)al.classList.add('active');
 
-  let vh = '';
-  for (const [k,v] of Object.entries(s.vars)) {
-    const cls = v === 'null' || v.includes('null') || v.includes('exhausted') ? ' null-val' : v.includes('→') || v.startsWith('[') ? ' sorted-val' : '';
-    vh += `<span class="var-name">${k}</span><span class="var-val${cls}">${v}</span>`;
+  let vh='';
+  for(const[k,v] of Object.entries(s.vars)){
+    const cls=v==='—'||v.includes('null')||v.includes('exhausted')?' null-val':v.includes('→')||v.startsWith('[')?' sorted-val':'';
+    vh+=`<span class="var-name">${k}</span><span class="var-val${cls}">${v}</span>`;
   }
-  document.getElementById('varsGrid').innerHTML = vh;
+  document.getElementById('varsGrid').innerHTML=vh;
 
-  document.getElementById('explain').textContent = s.explain;
-  document.getElementById('stepNum').textContent = `Step ${cur+1} / ${STEPS.length}`;
-  document.getElementById('prog').style.width = `${((cur+1)/STEPS.length)*100}%`;
-  document.getElementById('btnP').disabled = cur === 0;
-  document.getElementById('btnN').disabled = cur === STEPS.length - 1;
+  document.getElementById('explain').textContent=s.explain;
+  document.getElementById('stepNum').textContent=`Step ${cur+1} / ${STEPS.length}`;
+  document.getElementById('prog').style.width=`${((cur+1)/STEPS.length)*100}%`;
+  document.getElementById('btnP').disabled=cur===0;
+  document.getElementById('btnN').disabled=cur===STEPS.length-1;
 }
 
-function go(dir) {
-  const n = cur + dir;
-  if (n >= 0 && n < STEPS.length) { cur = n; render(); }
-}
-
-document.addEventListener('keydown', e => {
-  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1);
-  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   go(-1);
+function go(dir){const n=cur+dir;if(n>=0&&n<STEPS.length){cur=n;render();}}
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown')go(1);
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp')go(-1);
 });
-
 render();
 </script>
 </body>

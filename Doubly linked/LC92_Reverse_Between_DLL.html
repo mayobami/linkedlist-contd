@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LeetCode 92 — Reverse Linked List II (DLL)</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0d1117;color:#c9d1d9;min-height:100vh;display:flex;flex-direction:column;}
+.header{background:linear-gradient(135deg,#161b22,#21262d);padding:18px 28px;border-bottom:1px solid #30363d;display:flex;align-items:center;justify-content:space-between;}
+.header h1{font-size:18px;color:#58a6ff;font-weight:700;}
+.badges{display:flex;gap:8px;}
+.badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.b-med{background:#3d2b00;color:#ffa657;}
+.b-time{background:#0d2b0d;color:#56d364;}
+.b-space{background:#0c2233;color:#58a6ff;}
+.b-dll{background:#1b1327;color:#d2a8ff;border:1px solid #8957e5;}
+.progress{height:3px;background:#21262d;}
+.progress-fill{height:100%;background:#ffa657;transition:width .4s ease;}
+.main{display:grid;grid-template-columns:1fr 1fr;flex:1;overflow:hidden;}
+.panel{padding:20px;overflow-y:auto;border-right:1px solid #21262d;}
+.panel-title{font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:16px;}
+.phase-pill{display:inline-block;padding:4px 12px;background:#161b22;border:1px solid #30363d;border-radius:16px;font-size:12px;color:#8b949e;margin-bottom:14px;}
+.list-label{font-size:12px;color:#6e7681;margin-bottom:10px;font-style:italic;}
+.dll-list{display:flex;align-items:center;flex-wrap:wrap;margin-bottom:6px;}
+.node-col{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.ptr-row{height:20px;display:flex;align-items:center;justify-content:center;gap:3px;}
+.ptr-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;white-space:nowrap;}
+.ptr-tag.pa{background:#da3633;color:#fff;}
+.ptr-tag.ta{background:#238636;color:#fff;}
+.ptr-tag.na{background:#484f58;color:#fff;}
+.ptr-tag.res{background:#8957e5;color:#fff;}
+.node-box{width:52px;height:52px;border:2px solid #30363d;border-radius:8px;background:#161b22;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;transition:all .35s ease;}
+.node-box.t-dummy{background:#0d1117;border-color:#21262d;color:#484f58;font-size:13px;}
+.node-box.t-pa{border-color:#da3633;background:#2d1317;box-shadow:0 0 14px rgba(218,54,51,.35);}
+.node-box.t-seg{border-color:#ffa657;background:#2d1a00;box-shadow:0 0 14px rgba(255,166,87,.25);}
+.node-box.t-ta{border-color:#238636;background:#12261e;box-shadow:0 0 14px rgba(35,134,54,.35);}
+.node-box.t-result{border-color:#8957e5;background:#1b1327;box-shadow:0 0 14px rgba(137,87,229,.35);}
+.dll-conn{display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 1px;}
+.conn-fwd{display:flex;align-items:center;gap:2px;margin-bottom:2px;}
+.conn-bwd{display:flex;align-items:center;gap:2px;margin-top:2px;}
+.conn-lbl{font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;white-space:nowrap;}
+.lbl-a{background:#2d1317;color:#da3633;border:1px solid #da3633;}
+.lbl-b{background:#2d1a00;color:#ffa657;border:1px solid #ffa657;}
+.lbl-c{background:#0c1f3d;color:#58a6ff;border:1px solid #1f6feb;}
+.arr-r{font-size:16px;color:#484f58;line-height:1;}
+.arr-l{font-size:16px;color:#484f58;line-height:1;}
+.arr-r.hot,.arr-l.hot{color:#ffa657;font-weight:900;}
+.null-end{display:flex;flex-direction:column;justify-content:center;font-size:12px;color:#484f58;margin-left:2px;gap:6px;}
+.insight-box{margin-top:12px;padding:10px 14px;background:#161b22;border:1px solid #30363d;border-left:3px solid #ffa657;border-radius:4px;font-size:12px;color:#c9d1d9;line-height:1.7;}
+.insight-title{font-size:10px;font-weight:700;color:#ffa657;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+.changes-panel{margin-top:14px;border:1px solid #ffa657;border-radius:8px;overflow:hidden;}
+.changes-hdr{background:#2d1a00;padding:6px 14px;font-size:10px;font-weight:700;color:#ffa657;text-transform:uppercase;letter-spacing:1px;}
+.change-row{padding:9px 14px;border-bottom:1px solid #21262d;font-size:12px;line-height:1.9;}
+.change-row:last-child{border-bottom:none;}
+.change-code{font-family:'Cascadia Code',Consolas,monospace;display:block;background:#0a0e13;padding:3px 10px;border-radius:4px;color:#d2a8ff;margin-bottom:5px;font-size:12px;}
+.was{color:#8b949e;}.was span{font-family:monospace;color:#da3633;text-decoration:line-through;}
+.now{color:#c9d1d9;}.now span{font-family:monospace;color:#56d364;font-weight:700;}
+.why{margin-top:4px;font-size:11px;color:#6e7681;font-style:italic;line-height:1.6;}
+.no-change{margin-top:12px;padding:7px 14px;border:1px solid #21262d;border-radius:6px;font-size:11px;color:#484f58;font-style:italic;}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid #21262d;}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#8b949e;}
+.legend-dot{width:11px;height:11px;border-radius:3px;}
+.code-block{background:#0a0e13;border:1px solid #21262d;border-radius:8px;padding:12px;font-family:'Cascadia Code',Consolas,monospace;font-size:12px;line-height:2.1;}
+.code-line{padding:1px 8px;border-radius:4px;border-left:3px solid transparent;white-space:pre;transition:all .3s;}
+.code-line.active{background:rgba(255,166,87,.08);border-left-color:#ffa657;}
+.kw{color:#ff7b72;}.fn{color:#d2a8ff;}.cm{color:#6e7681;font-style:italic;}.nu{color:#f78166;}.var{color:#79c0ff;}
+.vars-section{margin-top:18px;}
+.vars-grid{display:grid;grid-template-columns:auto 1fr;gap:7px 14px;align-items:center;margin-top:9px;}
+.var-name{font-family:monospace;color:#79c0ff;font-size:12px;}
+.var-val{font-family:monospace;font-size:11px;background:#0a0e13;border:1px solid #21262d;padding:3px 8px;border-radius:4px;color:#a5d6ff;}
+.var-val.null-val{color:#484f58;}
+.bottom{border-top:1px solid #21262d;padding:12px 22px;display:flex;align-items:center;gap:12px;}
+.explain-box{flex:1;background:#161b22;border:1px solid #30363d;border-left:3px solid #ffa657;border-radius:4px;padding:11px 14px;font-size:13px;line-height:1.75;color:#c9d1d9;min-height:54px;}
+.step-num{font-size:12px;color:#6e7681;white-space:nowrap;}
+.btn{padding:7px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700;transition:all .2s;}
+.btn:disabled{opacity:.3;cursor:not-allowed;}
+.btn-prev{background:#21262d;color:#c9d1d9;border:1px solid #30363d;}
+.btn-prev:not(:disabled):hover{background:#30363d;}
+.btn-next{background:#3d2b00;color:#ffa657;border:1px solid #ffa657;}
+.btn-next:not(:disabled):hover{background:#2d1a00;}
+.key-hint{font-size:11px;color:#484f58;text-align:center;padding:4px;border-top:1px solid #21262d;}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>LeetCode 92 — Reverse Linked List II (Doubly Linked List)</h1>
+  <div class="badges">
+    <span class="badge b-med">Medium</span>
+    <span class="badge b-time">⏱ O(n)</span>
+    <span class="badge b-space">💾 O(1)</span>
+    <span class="badge b-dll">⇄ DLL</span>
+  </div>
+</div>
+<div class="progress"><div class="progress-fill" id="prog"></div></div>
+<div class="main">
+  <div class="panel">
+    <div class="panel-title">Visualization — Input:[1⇄2⇄3⇄4⇄5], left=2, right=4</div>
+    <div id="vizContent"></div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#da3633;"></div>prev_anchor</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ffa657;"></div>segment node</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#238636;"></div>right_node (tail→head)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#8957e5;"></div>result</div>
+      <div class="legend-item" style="margin-top:4px;width:100%;color:#6e7681;font-size:11px;">DLL idea: swap .next↔.prev for each node to reverse direction in place</div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">Code</div>
+    <div class="code-block">
+      <div class="code-line" data-ln="0"><span class="kw">def</span> <span class="fn">reverseBetween</span>(head, left, right):</div>
+      <div class="code-line" data-ln="1">    <span class="var">dummy</span> = DLLNode(<span class="nu">0</span>); <span class="var">dummy</span>.next=head; head.prev=<span class="var">dummy</span></div>
+      <div class="code-line" data-ln="2">    <span class="var">prev_anchor</span> = <span class="var">dummy</span></div>
+      <div class="code-line" data-ln="3">    <span class="kw">for</span> _ <span class="kw">in</span> range(left-<span class="nu">1</span>): <span class="var">prev_anchor</span>=<span class="var">prev_anchor</span>.next</div>
+      <div class="code-line" data-ln="4">    <span class="var">left_node</span> = <span class="var">prev_anchor</span>.next</div>
+      <div class="code-line" data-ln="5">    <span class="var">right_node</span> = <span class="var">left_node</span></div>
+      <div class="code-line" data-ln="6">    <span class="kw">for</span> _ <span class="kw">in</span> range(right-left): <span class="var">right_node</span>=<span class="var">right_node</span>.next</div>
+      <div class="code-line" data-ln="7">    <span class="var">next_anchor</span> = <span class="var">right_node</span>.next</div>
+      <div class="code-line" data-ln="8">    <span class="cm"># Swap next/prev for every node in segment</span></div>
+      <div class="code-line" data-ln="9">    <span class="var">curr</span> = <span class="var">left_node</span></div>
+      <div class="code-line" data-ln="10">    <span class="kw">while</span> <span class="var">curr</span> != <span class="var">next_anchor</span>:</div>
+      <div class="code-line" data-ln="11">        <span class="var">curr</span>.next, <span class="var">curr</span>.prev = <span class="var">curr</span>.prev, <span class="var">curr</span>.next</div>
+      <div class="code-line" data-ln="12">        <span class="var">curr</span> = <span class="var">curr</span>.prev   <span class="cm"># move forward (was .next)</span></div>
+      <div class="code-line" data-ln="13">    <span class="cm"># Reconnect segment to surrounding list</span></div>
+      <div class="code-line" data-ln="14">    <span class="var">prev_anchor</span>.next = <span class="var">right_node</span></div>
+      <div class="code-line" data-ln="15">    <span class="var">right_node</span>.prev = <span class="var">prev_anchor</span></div>
+      <div class="code-line" data-ln="16">    <span class="var">left_node</span>.next = <span class="var">next_anchor</span></div>
+      <div class="code-line" data-ln="17">    <span class="kw">if</span> <span class="var">next_anchor</span>: <span class="var">next_anchor</span>.prev = <span class="var">left_node</span></div>
+      <div class="code-line" data-ln="18">    <span class="kw">return</span> <span class="var">dummy</span>.next</div>
+    </div>
+    <div class="vars-section">
+      <div class="panel-title">Variables</div>
+      <div class="vars-grid" id="varsGrid"></div>
+    </div>
+  </div>
+</div>
+<div class="bottom">
+  <button class="btn btn-prev" id="btnP" onclick="go(-1)">← Prev</button>
+  <div class="explain-box" id="explain"></div>
+  <span class="step-num" id="stepNum"></span>
+  <button class="btn btn-next" id="btnN" onclick="go(1)">Next →</button>
+</div>
+<div class="key-hint">Keyboard: ← → arrow keys to navigate</div>
+<script>
+const STEPS=[
+  {phase:"Step 0 — Problem Setup",ln:0,
+   nodes:[{v:1,t:''},{v:2,t:''},{v:3,t:''},{v:4,t:''},{v:5,t:''}],
+   arrs:[null,null,null,null],
+   label:"Input DLL: 1⇄2⇄3⇄4⇄5, left=2, right=4. Goal: [1⇄4⇄3⇄2⇄5]",
+   vars:{prev_anchor:'—',left_node:'—',right_node:'—',next_anchor:'—'},changes:[],
+   explain:"DLL approach: instead of the SLL insert-to-front trick, we swap .next and .prev for each node in the segment. Swapping is simpler — each node already knows both directions. Then we reconnect the 4 boundary arrows."
+  },
+  {phase:"Step 1 — Setup dummy + walk prev_anchor  (lines 1–3)",ln:3,
+   nodes:[{v:'D',t:'t-dummy'},{v:1,t:'t-pa',p:['prev_anchor']},{v:2,t:'t-seg'},{v:3,t:'t-seg'},{v:4,t:'t-seg'},{v:5,t:''}],
+   arrs:[null,{fwd:{lbl:'pa.next→',hot:false},bwd:{lbl:'2.prev',hot:false}},null,null,null],
+   label:"dummy created. prev_anchor walks 1 step (left-1=1) and lands on node(1).",
+   vars:{prev_anchor:'node(1)',left_node:'—',right_node:'—',next_anchor:'—'},changes:[],
+   explain:"prev_anchor is at node(1) — just before position left=2. It will not move again. Segment nodes (2,3,4) are orange — these will be reversed. Node 5 is outside the range."
+  },
+  {phase:"Step 2 — Find left_node and right_node  (lines 4–6)",ln:6,
+   nodes:[{v:'D',t:'t-dummy'},{v:1,t:'t-pa',p:['prev_anchor']},{v:2,t:'t-seg',p:['left_node']},{v:3,t:'t-seg'},{v:4,t:'t-ta',p:['right_node']},{v:5,t:''}],
+   arrs:[null,{fwd:{lbl:'pa.next→',hot:false},bwd:null},null,null,null],
+   label:"left_node=node(2) at position left.  right_node=node(4) at position right.",
+   vars:{prev_anchor:'node(1)',left_node:'node(2)',right_node:'node(4)',next_anchor:'—'},changes:[],
+   explain:"left_node is the start of the segment (will become the tail after reversal). right_node is the end (will become the new head). next_anchor will be set next — it's node(5), what comes after right_node."
+  },
+  {phase:"Step 3 — next_anchor = right_node.next  (line 7)",ln:7,
+   nodes:[{v:'D',t:'t-dummy'},{v:1,t:'t-pa',p:['prev_anchor']},{v:2,t:'t-seg',p:['left_node']},{v:3,t:'t-seg'},{v:4,t:'t-ta',p:['right_node']},{v:5,t:'',p:['next_anchor']}],
+   arrs:[null,null,null,null,{fwd:{lbl:'rn.next→',hot:false},bwd:null}],
+   label:"next_anchor = right_node.next = node(5). This is where the segment reconnects after reversal.",
+   vars:{prev_anchor:'node(1)',left_node:'node(2)',right_node:'node(4)',next_anchor:'node(5)'},changes:[],
+   explain:"All four anchors are set. The segment [2,3,4] will be reversed. We know: prev_anchor (before), left_node (was head, becomes tail), right_node (was tail, becomes head), next_anchor (after). Now: swap .next↔.prev for each segment node."
+  },
+  {phase:"Step 4 — Swap node(2): .next↔.prev  (lines 10–12, iter 1)",ln:11,
+   nodes:[{v:'D',t:'t-dummy'},{v:1,t:'t-pa',p:['prev_anchor']},{v:2,t:'t-seg'},{v:3,t:'t-seg'},{v:4,t:'t-ta',p:['right_node']},{v:5,t:'',p:['next_anchor']}],
+   arrs:[null,null,{fwd:{lbl:'2.prev ↷',hot:true},bwd:{lbl:'←2.next ↷',hot:true}},null,null],
+   label:"node(2): swap(.next=node(3), .prev=node(1)) → now .next=node(1), .prev=node(3)",
+   vars:{prev_anchor:'node(1)',left_node:'node(2)',right_node:'node(4)',next_anchor:'node(5)'},
+   changes:[{code:'curr.next, curr.prev = curr.prev, curr.next',was:'node(2).next → node(3)  |  node(2).prev → node(1)',now:'node(2).next → node(1)  |  node(2).prev → node(3)',why:'Swapping .next and .prev reverses this node\'s direction in place. Before: it pointed forward to 3 and backward to 1. After: it points forward to 1 (reversed!) and backward to 3. Notice BOTH arrows changed direction at the same time — that\'s the DLL swap power.'}],
+   explain:"ARROWS CHANGED ↷ (both at once): node(2)'s → and ← both flipped. This is what DLL reversal means — swap the two directions. Now curr = curr.prev = node(3) (we move forward using what used to be .next, now in .prev)."
+  },
+  {phase:"Step 5 — Swap node(3): .next↔.prev  (lines 10–12, iter 2)",ln:11,
+   nodes:[{v:'D',t:'t-dummy'},{v:1,t:'t-pa',p:['prev_anchor']},{v:2,t:'t-seg'},{v:3,t:'t-seg'},{v:4,t:'t-ta',p:['right_node']},{v:5,t:'',p:['next_anchor']}],
+   arrs:[null,null,null,{fwd:{lbl:'3.prev ↷',hot:true},bwd:{lbl:'←3.next ↷',hot:true}},null],
+   label:"node(3): swap(.next=node(4), .prev=node(2)) → now .next=node(2), .prev=node(4)",
+   vars:{prev_anchor:'node(1)',left_node:'node(2)',right_node:'node(4)',next_anchor:'node(5)'},
+   changes:[{code:'curr.next, curr.prev = curr.prev, curr.next',was:'node(3).next → node(4)  |  node(3).prev → node(2)',now:'node(3).next → node(2)  |  node(3).prev → node(4)',why:'Same swap on node(3). After this swap, node(3) points backward toward node(2) and its .prev points toward node(4). The segment is building up as a reversed chain internally.'}],
+   explain:"ARROWS CHANGED ↷: node(3) flipped. curr moves to node(4) next."
+  },
+  {phase:"Step 6 — Swap node(4): .next↔.prev  (lines 10–12, iter 3)",ln:11,
+   nodes:[{v:'D',t:'t-dummy'},{v:1,t:'t-pa',p:['prev_anchor']},{v:2,t:'t-seg'},{v:3,t:'t-seg'},{v:4,t:'t-ta',p:['right_node']},{v:5,t:'',p:['next_anchor']}],
+   arrs:[null,null,null,null,{fwd:{lbl:'4.prev ↷',hot:true},bwd:{lbl:'←4.next ↷',hot:true}}],
+   label:"node(4): swap(.next=node(5), .prev=node(3)) → now .next=node(3), .prev=node(5)",
+   vars:{prev_anchor:'node(1)',left_node:'node(2)',right_node:'node(4)',next_anchor:'node(5)'},
+   changes:[{code:'curr.next, curr.prev = curr.prev, curr.next',was:'node(4).next → node(5)  |  node(4).prev → node(3)',now:'node(4).next → node(3)  |  node(4).prev → node(5)',why:'All three segment nodes are swapped. The segment\'s internal links now read: 4→3→2. But the endpoints are broken — right_node(4).prev points to node(5) instead of prev_anchor, and left_node(2).next points to node(1) instead of next_anchor. We fix these 4 boundary pointers next.'}],
+   explain:"ARROWS CHANGED ↷: node(4) flipped. The swap loop is done. Segment internal links: 4→3→2 and 2←3←4. But the 4 boundary connections (2 on each side) are wrong — they need reconnecting."
+  },
+  {phase:"Step 7 — Reconnect: prev_anchor.next=right_node  (line 14)",ln:14,
+   nodes:[{v:'D',t:'t-dummy'},{v:1,t:'t-pa',p:['prev_anchor']},{v:4,t:'t-ta',p:['right_node']},{v:3,t:'t-seg'},{v:2,t:'t-seg',p:['left_node']},{v:5,t:'',p:['next_anchor']}],
+   arrs:[null,{fwd:{lbl:'pa.next ↷',hot:true},bwd:null},null,null,null],
+   label:"prev_anchor.next now points to right_node(4). Left boundary forward link fixed.",
+   vars:{prev_anchor:'node(1)',left_node:'node(2)',right_node:'node(4)',next_anchor:'node(5)'},
+   changes:[{code:'prev_anchor.next = right_node',was:'prev_anchor.next → node(2)',now:'prev_anchor.next → node(4)',why:'The first of 4 boundary fixes. prev_anchor must now lead into right_node (the new head of the reversed segment). The segment order is now visually correct: 1→4→3→2.'}],
+   explain:"ARROW CHANGED ↷: prev_anchor.next now points to right_node(4). The forward chain is partially correct: D→1→4→3→2 and then broken. Three more boundary arrows to fix."
+  },
+  {phase:"Step 8 — Reconnect all 4 boundaries  (lines 14–17)",ln:17,
+   nodes:[{v:'D',t:'t-dummy'},{v:1,t:'t-pa',p:['prev_anchor']},{v:4,t:'t-ta'},{v:3,t:'t-seg'},{v:2,t:'t-seg',p:['left_node']},{v:5,t:'',p:['next_anchor']}],
+   arrs:[null,{fwd:{lbl:'pa.next',hot:false},bwd:{lbl:'4.prev ↷',hot:true}},{fwd:{lbl:'',hot:false},bwd:{lbl:'',hot:false}},{fwd:{lbl:'2.next ↷',hot:true},bwd:{lbl:'',hot:false}},{fwd:{lbl:'',hot:false},bwd:{lbl:'5.prev ↷',hot:true}}],
+   label:"All 4 boundary arrows fixed: pa↔4 and 2↔5",
+   vars:{prev_anchor:'node(1)',left_node:'node(2)',right_node:'node(4)',next_anchor:'node(5)'},
+   changes:[
+     {code:'right_node.prev = prev_anchor',was:'node(4).prev → node(5)  (was swapped)',now:'node(4).prev → node(1)',why:'The backward link from the new head back to prev_anchor. Left side now has ↔ in both directions.'},
+     {code:'left_node.next = next_anchor   next_anchor.prev = left_node',was:'node(2).next → node(1)  |  node(5).prev → node(4)',now:'node(2).next → node(5)  |  node(5).prev → node(2)',why:'Right-side boundary: left_node (the new tail) must point forward to next_anchor, and next_anchor must point backward to left_node. 4 total fixes = 2 boundaries × 2 directions each.'}
+   ],
+   explain:"ARROWS CHANGED ↷: All 4 boundary arrows fixed. The DLL is now fully valid: every node has correct .next AND .prev. Return dummy.next."
+  },
+  {phase:"Step 9 — return dummy.next  (line 18)",ln:18,
+   nodes:[{v:1,t:'t-result'},{v:4,t:'t-result'},{v:3,t:'t-result'},{v:2,t:'t-result'},{v:5,t:'t-result'}],
+   arrs:[{fwd:{lbl:'',hot:false},bwd:{lbl:'',hot:false}},{fwd:{lbl:'',hot:false},bwd:{lbl:'',hot:false}},{fwd:{lbl:'',hot:false},bwd:{lbl:'',hot:false}},{fwd:{lbl:'',hot:false},bwd:{lbl:'',hot:false}}],
+   label:"✓ Result: 1⇄4⇄3⇄2⇄5  — valid DLL, all .next and .prev correct",
+   vars:{prev_anchor:'node(1)',left_node:'node(2)',right_node:'node(4)',next_anchor:'node(5)'},changes:[],
+   explain:"Done. DLL reversal: 3 swaps (one per segment node) + 4 boundary fixes = 10 pointer changes total. SLL used 6 changes (3 per iteration × 2 iterations). DLL is more changes but conceptually simpler — swap is a single operation, no careful ordering needed."
+  }
+];
+
+let cur=0;
+function nodeH(n){
+  const ptrs=(n.p||[]).map(l=>{
+    const cls=l==='prev_anchor'?'pa':l==='right_node'?'ta':l==='next_anchor'?'na':'res';
+    return`<span class="ptr-tag ${cls}">${l}</span>`;
+  }).join('');
+  const tc=(!n.t||n.t==='normal')?'':n.t;
+  return`<div class="node-col"><div class="ptr-row">${ptrs}</div><div class="node-box ${tc}">${n.v}</div></div>`;
+}
+function connH(a){
+  if(!a)return`<div class="dll-conn"><div class="conn-fwd"><span class="arr-r">→</span></div><div class="conn-bwd"><span class="arr-l">←</span></div></div>`;
+  const fR=a.fwd&&a.fwd.lbl?`<span class="conn-lbl lbl-b">${a.fwd.lbl}</span><span class="arr-r${a.fwd.hot?' hot':''}">→</span>`:`<span class="arr-r${a.fwd&&a.fwd.hot?' hot':''}">→</span>`;
+  const bR=a.bwd&&a.bwd.lbl?`<span class="arr-l${a.bwd&&a.bwd.hot?' hot':''}">←</span><span class="conn-lbl lbl-b">${a.bwd.lbl}</span>`:`<span class="arr-l${a.bwd&&a.bwd.hot?' hot':''}">←</span>`;
+  return`<div class="dll-conn"><div class="conn-fwd">${fR}</div><div class="conn-bwd">${bR}</div></div>`;
+}
+function changesH(ch){
+  if(!ch||!ch.length)return`<div class="no-change">No pointer changes this step.</div>`;
+  let h=`<div class="changes-panel"><div class="changes-hdr">↷ Arrow changes this step</div>`;
+  ch.forEach(c=>{h+=`<div class="change-row"><code class="change-code">${c.code}</code><div class="was">Before: <span>${c.was}</span></div><div class="now">After:&nbsp; <span>${c.now}</span></div><div class="why">${c.why}</div></div>`;});
+  return h+`</div>`;
+}
+function render(){
+  const s=STEPS[cur];
+  let lH=`<div class="list-label">${s.label}</div><div class="dll-list">`;
+  s.nodes.forEach((n,i)=>{lH+=nodeH(n);if(i<s.nodes.length-1)lH+=connH(s.arrs?s.arrs[i]:null);});
+  lH+=`<div class="null-end"><span>→null</span><span>null←</span></div></div>`;
+  document.getElementById('vizContent').innerHTML=`<div class="phase-pill">${s.phase}</div>`+lH+changesH(s.changes);
+  document.querySelectorAll('.code-line').forEach(e=>e.classList.remove('active'));
+  const al=document.querySelector(`.code-line[data-ln="${s.ln}"]`);
+  if(al)al.classList.add('active');
+  let vh='';
+  for(const[k,v] of Object.entries(s.vars))vh+=`<span class="var-name">${k}</span><span class="var-val${v==='—'?' null-val':''}">${v}</span>`;
+  document.getElementById('varsGrid').innerHTML=vh;
+  document.getElementById('explain').textContent=s.explain;
+  document.getElementById('stepNum').textContent=`Step ${cur+1} / ${STEPS.length}`;
+  document.getElementById('prog').style.width=`${((cur+1)/STEPS.length)*100}%`;
+  document.getElementById('btnP').disabled=cur===0;
+  document.getElementById('btnN').disabled=cur===STEPS.length-1;
+}
+function go(d){const n=cur+d;if(n>=0&&n<STEPS.length){cur=n;render();}}
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown')go(1);
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp')go(-1);
+});
+render();
+</script>
+</body>
+</html>

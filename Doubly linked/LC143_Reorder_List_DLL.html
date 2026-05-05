@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LeetCode 143 — Reorder List (DLL)</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0d1117;color:#c9d1d9;min-height:100vh;display:flex;flex-direction:column;}
+.header{background:linear-gradient(135deg,#161b22,#21262d);padding:18px 28px;border-bottom:1px solid #30363d;display:flex;align-items:center;justify-content:space-between;}
+.header h1{font-size:18px;color:#58a6ff;font-weight:700;}
+.badges{display:flex;gap:8px;}
+.badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.b-med{background:#3d2b00;color:#ffa657;}
+.b-time{background:#0d2b0d;color:#56d364;}
+.b-space{background:#0c2233;color:#58a6ff;}
+.b-dll{background:#1b1327;color:#d2a8ff;border:1px solid #8957e5;}
+.progress{height:3px;background:#21262d;}
+.progress-fill{height:100%;background:#d2a8ff;transition:width .4s ease;}
+.main{display:grid;grid-template-columns:1fr 1fr;flex:1;overflow:hidden;}
+.panel{padding:20px;overflow-y:auto;border-right:1px solid #21262d;}
+.panel-title{font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:16px;}
+.phase-pill{display:inline-block;padding:4px 12px;background:#161b22;border:1px solid #30363d;border-radius:16px;font-size:12px;color:#8b949e;margin-bottom:14px;}
+.list-label{font-size:12px;color:#6e7681;margin-bottom:10px;font-style:italic;}
+.dll-list{display:flex;align-items:center;flex-wrap:wrap;margin-bottom:6px;}
+.node-col{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.ptr-row{height:20px;display:flex;align-items:center;justify-content:center;gap:3px;}
+.ptr-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;white-space:nowrap;}
+.ptr-tag.lft{background:#1f6feb;color:#fff;}
+.ptr-tag.rgt{background:#6e40c9;color:#fff;}
+.node-box{width:52px;height:52px;border:2px solid #30363d;border-radius:8px;background:#161b22;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;transition:all .35s ease;}
+.node-box.t-left{border-color:#1f6feb;background:#0c1f3d;box-shadow:0 0 12px rgba(31,111,235,.3);}
+.node-box.t-right{border-color:#8957e5;background:#1b1327;box-shadow:0 0 12px rgba(137,87,229,.3);}
+.node-box.t-done{border-color:#56d364;background:#0d2b0d;box-shadow:0 0 12px rgba(86,211,100,.2);}
+.node-box.t-result{border-color:#8957e5;background:#1b1327;box-shadow:0 0 12px rgba(137,87,229,.3);}
+.dll-conn{display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 1px;}
+.conn-fwd{display:flex;align-items:center;gap:2px;margin-bottom:2px;}
+.conn-bwd{display:flex;align-items:center;gap:2px;margin-top:2px;}
+.conn-lbl{font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;white-space:nowrap;}
+.lbl-l{background:#0c1f3d;color:#58a6ff;border:1px solid #1f6feb;}
+.lbl-r{background:#1b1327;color:#d2a8ff;border:1px solid #8957e5;}
+.lbl-h{background:#2d1a00;color:#ffa657;border:1px solid #ffa657;}
+.arr-r{font-size:16px;color:#484f58;line-height:1;}
+.arr-l{font-size:16px;color:#484f58;line-height:1;}
+.arr-r.hot,.arr-l.hot{color:#ffa657;font-weight:900;}
+.null-end{display:flex;flex-direction:column;justify-content:center;font-size:12px;color:#484f58;margin-left:2px;gap:6px;}
+.changes-panel{margin-top:14px;border:1px solid #ffa657;border-radius:8px;overflow:hidden;}
+.changes-hdr{background:#2d1a00;padding:6px 14px;font-size:10px;font-weight:700;color:#ffa657;text-transform:uppercase;letter-spacing:1px;}
+.change-row{padding:9px 14px;border-bottom:1px solid #21262d;font-size:12px;line-height:1.9;}
+.change-row:last-child{border-bottom:none;}
+.change-code{font-family:'Cascadia Code',Consolas,monospace;display:block;background:#0a0e13;padding:3px 10px;border-radius:4px;color:#d2a8ff;margin-bottom:5px;font-size:12px;}
+.was{color:#8b949e;}.was span{font-family:monospace;color:#da3633;text-decoration:line-through;}
+.now{color:#c9d1d9;}.now span{font-family:monospace;color:#56d364;font-weight:700;}
+.why{margin-top:4px;font-size:11px;color:#6e7681;font-style:italic;line-height:1.6;}
+.no-change{margin-top:12px;padding:7px 14px;border:1px solid #21262d;border-radius:6px;font-size:11px;color:#484f58;font-style:italic;}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid #21262d;}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#8b949e;}
+.legend-dot{width:11px;height:11px;border-radius:3px;}
+.code-block{background:#0a0e13;border:1px solid #21262d;border-radius:8px;padding:12px;font-family:'Cascadia Code',Consolas,monospace;font-size:12px;line-height:2.1;}
+.code-line{padding:1px 8px;border-radius:4px;border-left:3px solid transparent;white-space:pre;transition:all .3s;}
+.code-line.active{background:rgba(210,168,255,.08);border-left-color:#d2a8ff;}
+.kw{color:#ff7b72;}.fn{color:#d2a8ff;}.cm{color:#6e7681;font-style:italic;}.nu{color:#f78166;}.var{color:#79c0ff;}
+.vars-section{margin-top:18px;}
+.vars-grid{display:grid;grid-template-columns:auto 1fr;gap:7px 14px;align-items:center;margin-top:9px;}
+.var-name{font-family:monospace;color:#79c0ff;font-size:12px;}
+.var-val{font-family:monospace;font-size:11px;background:#0a0e13;border:1px solid #21262d;padding:3px 8px;border-radius:4px;color:#a5d6ff;}
+.var-val.null-val{color:#484f58;}
+.bottom{border-top:1px solid #21262d;padding:12px 22px;display:flex;align-items:center;gap:12px;}
+.explain-box{flex:1;background:#161b22;border:1px solid #30363d;border-left:3px solid #d2a8ff;border-radius:4px;padding:11px 14px;font-size:13px;line-height:1.75;color:#c9d1d9;min-height:54px;}
+.step-num{font-size:12px;color:#6e7681;white-space:nowrap;}
+.btn{padding:7px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700;transition:all .2s;}
+.btn:disabled{opacity:.3;cursor:not-allowed;}
+.btn-prev{background:#21262d;color:#c9d1d9;border:1px solid #30363d;}
+.btn-prev:not(:disabled):hover{background:#30363d;}
+.btn-next{background:#6e40c9;color:#fff;}
+.btn-next:not(:disabled):hover{background:#8957e5;}
+.key-hint{font-size:11px;color:#484f58;text-align:center;padding:4px;border-top:1px solid #21262d;}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>LeetCode 143 — Reorder List (Doubly Linked List)</h1>
+  <div class="badges">
+    <span class="badge b-med">Medium</span>
+    <span class="badge b-time">⏱ O(n)</span>
+    <span class="badge b-space">💾 O(1)</span>
+    <span class="badge b-dll">⇄ DLL</span>
+  </div>
+</div>
+<div class="progress"><div class="progress-fill" id="prog"></div></div>
+<div class="main">
+  <div class="panel">
+    <div class="panel-title">Visualization — Input: [1⇄2⇄3⇄4⇄5]</div>
+    <div id="vizContent"></div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#1f6feb;"></div>left (front pointer)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#8957e5;"></div>right (back pointer)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#56d364;"></div>placed / done</div>
+      <div class="legend-item" style="margin-top:4px;width:100%;color:#6e7681;font-size:11px;">SLL needs 3 phases (find mid, reverse, merge). DLL: one inward sweep using .prev.</div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">Code</div>
+    <div class="code-block">
+      <div class="code-line" data-ln="0"><span class="kw">def</span> <span class="fn">reorderList</span>(head):</div>
+      <div class="code-line" data-ln="1">    <span class="kw">if not</span> head <span class="kw">or not</span> head.next <span class="kw">or not</span> head.next.next:</div>
+      <div class="code-line" data-ln="2">        <span class="kw">return</span></div>
+      <div class="code-line" data-ln="3">    <span class="cm"># Find tail</span></div>
+      <div class="code-line" data-ln="4">    <span class="var">right</span> = head</div>
+      <div class="code-line" data-ln="5">    <span class="kw">while</span> <span class="var">right</span>.next: <span class="var">right</span> = <span class="var">right</span>.next</div>
+      <div class="code-line" data-ln="6">    <span class="var">left</span> = head</div>
+      <div class="code-line" data-ln="7">    <span class="kw">while</span> <span class="var">left</span> != <span class="var">right</span> <span class="kw">and</span> <span class="var">left</span>.next != <span class="var">right</span>:</div>
+      <div class="code-line" data-ln="8">        <span class="var">right_prev</span> = <span class="var">right</span>.prev</div>
+      <div class="code-line" data-ln="9">        <span class="var">left_next</span> = <span class="var">left</span>.next</div>
+      <div class="code-line" data-ln="10">        <span class="cm"># Detach right from end</span></div>
+      <div class="code-line" data-ln="11">        <span class="var">right_prev</span>.next = <span class="kw">None</span></div>
+      <div class="code-line" data-ln="12">        <span class="var">right</span>.prev = <span class="kw">None</span></div>
+      <div class="code-line" data-ln="13">        <span class="cm"># Insert right after left</span></div>
+      <div class="code-line" data-ln="14">        <span class="var">left</span>.next = <span class="var">right</span></div>
+      <div class="code-line" data-ln="15">        <span class="var">right</span>.prev = <span class="var">left</span></div>
+      <div class="code-line" data-ln="16">        <span class="var">right</span>.next = <span class="var">left_next</span></div>
+      <div class="code-line" data-ln="17">        <span class="var">left_next</span>.prev = <span class="var">right</span></div>
+      <div class="code-line" data-ln="18">        <span class="var">left</span> = <span class="var">left_next</span></div>
+      <div class="code-line" data-ln="19">        <span class="var">right</span> = <span class="var">right_prev</span></div>
+    </div>
+    <div class="vars-section">
+      <div class="panel-title">Variables</div>
+      <div class="vars-grid" id="varsGrid"></div>
+    </div>
+  </div>
+</div>
+<div class="bottom">
+  <button class="btn btn-prev" id="btnP" onclick="go(-1)">← Prev</button>
+  <div class="explain-box" id="explain"></div>
+  <span class="step-num" id="stepNum"></span>
+  <button class="btn btn-next" id="btnN" onclick="go(1)">Next →</button>
+</div>
+<div class="key-hint">Keyboard: ← → arrow keys to navigate</div>
+<script>
+const STEPS=[
+  {phase:"Step 0 — Problem Setup",ln:0,
+   nodes:[{v:1,t:''},{v:2,t:''},{v:3,t:''},{v:4,t:''},{v:5,t:''}],
+   arrs:[null,null,null,null],label:"Input: [1⇄2⇄3⇄4⇄5]. Goal: [1⇄5⇄2⇄4⇄3]",
+   vars:{left:'—',right:'—',right_prev:'—',left_next:'—'},changes:[],
+   explain:"Reorder: L0→L1→...→Ln becomes L0→Ln→L1→Ln-1→... SLL: find middle, reverse second half, merge (3 phases). DLL: use left from front, right from back, walk inward and insert right after left each time. right.prev lets us retreat right — no reversal needed."
+  },
+  {phase:"Step 1 — Find tail → right = node(5)  (lines 4–5)",ln:5,
+   nodes:[{v:1,t:''},{v:2,t:''},{v:3,t:''},{v:4,t:''},{v:5,t:'t-right',p:['right']}],
+   arrs:[null,null,null,{fwd:null,bwd:{lbl:'←right.prev',hot:false}}],
+   label:"Walk right to tail. right = node(5). Now left = head = node(1).",
+   vars:{left:'node(1)',right:'node(5)',right_prev:'—',left_next:'—'},changes:[],
+   explain:"right starts at the tail (node 5). left at head (node 1). They will walk toward each other. Each iteration: detach right from the back, insert it after left. right.prev gives us the next position for right without traversal."
+  },
+  {phase:"Step 2 — Save right_prev and left_next  (lines 8–9)",ln:9,
+   nodes:[{v:1,t:'t-left',p:['left']},{v:2,t:'t-done',p:['left_next']},{v:3,t:''},{v:4,t:'t-done',p:['right_prev']},{v:5,t:'t-right',p:['right']}],
+   arrs:[{fwd:{lbl:'left.next→',hot:false},bwd:null},{fwd:null,bwd:null},{fwd:null,bwd:null},{fwd:null,bwd:{lbl:'←right.prev',hot:false}}],
+   label:"Save: right_prev=node(4) (right's current predecessor) and left_next=node(2) (left's current successor)",
+   vars:{left:'node(1)',right:'node(5)',right_prev:'node(4)',left_next:'node(2)'},changes:[],
+   explain:"MUST save both pointers BEFORE any rewiring. right_prev is where right will move after extraction. left_next is where right will point after insertion. This is the same save-before-cut principle as every linked list surgery."
+  },
+  {phase:"Step 3 — Detach right from end  (lines 11–12)",ln:12,
+   nodes:[{v:1,t:'t-left',p:['left']},{v:2,t:'',p:['left_next']},{v:3,t:''},{v:4,t:'',p:['right_prev']}],
+   arrs:[{fwd:{lbl:'left.next→',hot:false},bwd:null},{fwd:null,bwd:null},{fwd:{lbl:'rp.next ↷',hot:true},bwd:null}],
+   label:"right_prev.next = None (cut forward)  +  right.prev = None (cut backward).  node(5) floats.",
+   vars:{left:'node(1)',right:'node(5) [detached]',right_prev:'node(4)',left_next:'node(2)'},
+   changes:[{code:'right_prev.next = None   right.prev = None',was:'node(4).next → node(5)  |  node(5).prev → node(4)',now:'node(4).next → null  |  node(5).prev → null',why:'Two cuts to fully detach node(5). The forward arrow from node(4) to node(5) is severed, and the backward arrow from node(5) to node(4) is cleared. node(5) is now free-floating, held only by the right variable.'}],
+   explain:"ARROWS CHANGED ↷: Both directions between node(4) and node(5) are cut. node(5) floats — ready to be inserted. The main chain is now [1⇄2⇄3⇄4]."
+  },
+  {phase:"Step 4 — Insert right after left  (lines 14–17)",ln:17,
+   nodes:[{v:1,t:'t-done'},{v:5,t:'t-done'},{v:2,t:'t-left',p:['left']},{v:3,t:''},{v:4,t:'t-right',p:['right']}],
+   arrs:[{fwd:{lbl:'↷',hot:true},bwd:{lbl:'↷',hot:true}},{fwd:{lbl:'↷',hot:true},bwd:{lbl:'↷',hot:true}},{fwd:null,bwd:null},{fwd:null,bwd:null}],
+   label:"Insert node(5) between node(1) and node(2). 4 pointer changes. Advance left→node(2), right→node(4).",
+   vars:{left:'node(2)',right:'node(4)',right_prev:'node(4)',left_next:'node(2)'},
+   changes:[
+     {code:'left.next=right   right.prev=left   right.next=left_next   left_next.prev=right',was:'1→2 (fwd)  |  2←1 (bwd)  |  5→null  |  2.prev→1',now:'1→5→2 (fwd chain)  |  2←5←1 (bwd chain)',why:'Four pointer changes to insert node(5) into position: (1) 1.next→5, (2) 5.prev→1, (3) 5.next→2, (4) 2.prev→5. The full bidirectional chain 1⇄5⇄2 is now valid.'}
+   ],
+   explain:"ARROWS CHANGED ↷: 4 arrows set to place node(5) between node(1) and node(2). The DLL 1⇄5⇄2 section is valid in both directions. left advances to node(2), right retreats to node(4) via the saved right_prev."
+  },
+  {phase:"Step 5 — Iteration 2: detach node(4) and insert after node(2)",ln:17,
+   nodes:[{v:1,t:'t-done'},{v:5,t:'t-done'},{v:2,t:'t-done'},{v:4,t:'t-done'},{v:3,t:'t-left',p:['left']}],
+   arrs:[null,null,null,{fwd:{lbl:'↷',hot:true},bwd:{lbl:'↷',hot:true}}],
+   label:"Detach node(4) from tail, insert after node(2). left=node(3), right=node(3) → loop exits.",
+   vars:{left:'node(3)',right:'node(3)',right_prev:'node(3)',left_next:'node(3)'},
+   changes:[{code:'(same 4-step pattern for node(4))',was:'2→3→null and node(4) at tail',now:'2→4→3 inserted  |  left=node(3), right=node(3)',why:'Detach node(4) (2 cuts), insert after node(2) (4 pointer changes). Now left==right (both are node 3, the center). Loop condition fails — done.'}],
+   explain:"Iteration 2: node(4) detached from end, inserted after node(2). Result so far: 1⇄5⇄2⇄4⇄3. left and right both point to node(3) — they've met. Loop exits."
+  },
+  {phase:"Step 6 — Done  (loop exits: left == right)",ln:7,
+   nodes:[{v:1,t:'t-result'},{v:5,t:'t-result'},{v:2,t:'t-result'},{v:4,t:'t-result'},{v:3,t:'t-result'}],
+   arrs:[{fwd:{lbl:'',hot:false},bwd:{lbl:'',hot:false}},{fwd:{lbl:'',hot:false},bwd:{lbl:'',hot:false}},{fwd:{lbl:'',hot:false},bwd:{lbl:'',hot:false}},{fwd:{lbl:'',hot:false},bwd:{lbl:'',hot:false}}],
+   label:"✓ Result: 1⇄5⇄2⇄4⇄3  — valid DLL, in-place reorder complete",
+   vars:{left:'node(3)',right:'node(3)',right_prev:'—',left_next:'—'},changes:[],
+   explain:"Done. Input [1,2,3,4,5] → Output [1,5,2,4,3]. O(n) time, O(1) space. Each iteration: 2 detach cuts + 4 insert pointers = 6 changes. Total: 2 iterations × 6 = 12 pointer changes. SLL needs: find middle + reverse + merge = more code, same complexity."
+  }
+];
+let cur=0;
+function nodeH(n){
+  const ptrs=(n.p||[]).map(l=>{
+    const cls=l==='left'?'lft':'rgt';
+    return`<span class="ptr-tag ${cls}">${l}</span>`;
+  }).join('');
+  const tc=(!n.t||n.t==='normal')?'':n.t;
+  return`<div class="node-col"><div class="ptr-row">${ptrs}</div><div class="node-box ${tc}">${n.v}</div></div>`;
+}
+function connH(a){
+  if(!a)return`<div class="dll-conn"><div class="conn-fwd"><span class="arr-r">→</span></div><div class="conn-bwd"><span class="arr-l">←</span></div></div>`;
+  const fR=a.fwd&&a.fwd.lbl?`<span class="conn-lbl ${a.fwd.hot?'lbl-h':'lbl-l'}">${a.fwd.lbl}</span><span class="arr-r${a.fwd.hot?' hot':''}">→</span>`:`<span class="arr-r${a.fwd&&a.fwd.hot?' hot':''}">→</span>`;
+  const bR=a.bwd&&a.bwd.lbl?`<span class="arr-l${a.bwd&&a.bwd.hot?' hot':''}">←</span><span class="conn-lbl ${a.bwd.hot?'lbl-h':'lbl-r'}">${a.bwd.lbl}</span>`:`<span class="arr-l${a.bwd&&a.bwd.hot?' hot':''}">←</span>`;
+  return`<div class="dll-conn"><div class="conn-fwd">${fR}</div><div class="conn-bwd">${bR}</div></div>`;
+}
+function changesH(ch){
+  if(!ch||!ch.length)return`<div class="no-change">No pointer changes — reading or checking variables only.</div>`;
+  let h=`<div class="changes-panel"><div class="changes-hdr">↷ Arrow changes this step</div>`;
+  ch.forEach(c=>{h+=`<div class="change-row"><code class="change-code">${c.code}</code><div class="was">Before: <span>${c.was}</span></div><div class="now">After:&nbsp; <span>${c.now}</span></div><div class="why">${c.why}</div></div>`;});
+  return h+`</div>`;
+}
+function render(){
+  const s=STEPS[cur];
+  let lH=`<div class="list-label">${s.label}</div><div class="dll-list">`;
+  s.nodes.forEach((n,i)=>{lH+=nodeH(n);if(i<s.nodes.length-1)lH+=connH(s.arrs?s.arrs[i]:null);});
+  lH+=`<div class="null-end"><span>→null</span><span>null←</span></div></div>`;
+  document.getElementById('vizContent').innerHTML=`<div class="phase-pill">${s.phase}</div>`+lH+changesH(s.changes);
+  document.querySelectorAll('.code-line').forEach(e=>e.classList.remove('active'));
+  const al=document.querySelector(`.code-line[data-ln="${s.ln}"]`);
+  if(al)al.classList.add('active');
+  let vh='';
+  for(const[k,v] of Object.entries(s.vars))vh+=`<span class="var-name">${k}</span><span class="var-val${v==='—'?' null-val':''}">${v}</span>`;
+  document.getElementById('varsGrid').innerHTML=vh;
+  document.getElementById('explain').textContent=s.explain;
+  document.getElementById('stepNum').textContent=`Step ${cur+1} / ${STEPS.length}`;
+  document.getElementById('prog').style.width=`${((cur+1)/STEPS.length)*100}%`;
+  document.getElementById('btnP').disabled=cur===0;
+  document.getElementById('btnN').disabled=cur===STEPS.length-1;
+}
+function go(d){const n=cur+d;if(n>=0&&n<STEPS.length){cur=n;render();}}
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown')go(1);
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp')go(-1);
+});
+render();
+</script>
+</body>
+</html>

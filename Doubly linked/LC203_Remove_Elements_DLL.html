@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LeetCode 203 — Remove Linked List Elements (DLL)</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0d1117;color:#c9d1d9;min-height:100vh;display:flex;flex-direction:column;}
+.header{background:linear-gradient(135deg,#161b22,#21262d);padding:18px 28px;border-bottom:1px solid #30363d;display:flex;align-items:center;justify-content:space-between;}
+.header h1{font-size:19px;color:#58a6ff;font-weight:700;}
+.badges{display:flex;gap:8px;}
+.badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.b-easy{background:#0d2b0d;color:#56d364;}
+.b-time{background:#0d2b0d;color:#56d364;}
+.b-space{background:#0c2233;color:#58a6ff;}
+.b-dll{background:#1b1327;color:#d2a8ff;border:1px solid #8957e5;}
+.progress{height:3px;background:#21262d;}
+.progress-fill{height:100%;background:#56d364;transition:width .4s ease;}
+.main{display:grid;grid-template-columns:1fr 1fr;flex:1;overflow:hidden;}
+.panel{padding:20px;overflow-y:auto;border-right:1px solid #21262d;}
+.panel-title{font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:16px;}
+.phase-pill{display:inline-block;padding:4px 12px;background:#161b22;border:1px solid #30363d;border-radius:16px;font-size:12px;color:#8b949e;margin-bottom:14px;}
+.list-label{font-size:12px;color:#6e7681;margin-bottom:10px;font-style:italic;}
+/* DLL node layout */
+.dll-list{display:flex;align-items:center;flex-wrap:wrap;margin-bottom:6px;}
+.node-col{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.ptr-row{height:20px;display:flex;align-items:center;justify-content:center;gap:3px;}
+.ptr-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;white-space:nowrap;}
+.ptr-tag.curr{background:#238636;color:#fff;}
+.ptr-tag.target{background:#da3633;color:#fff;}
+.node-box{width:52px;height:52px;border:2px solid #30363d;border-radius:8px;background:#161b22;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;transition:all .35s ease;}
+.node-box.t-dummy{background:#0d1117;border-color:#21262d;color:#484f58;font-size:13px;}
+.node-box.t-curr{border-color:#238636;background:#12261e;box-shadow:0 0 14px rgba(35,134,54,.35);}
+.node-box.t-remove{border-color:#da3633;background:#2d1317;box-shadow:0 0 14px rgba(218,54,51,.35);}
+.node-box.t-result{border-color:#8957e5;background:#1b1327;box-shadow:0 0 14px rgba(137,87,229,.35);}
+/* DLL connector — shows BOTH → and ← */
+.dll-conn{display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 1px;}
+.conn-fwd{display:flex;align-items:center;gap:2px;margin-bottom:2px;}
+.conn-bwd{display:flex;align-items:center;gap:2px;margin-top:2px;}
+.conn-lbl{font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;white-space:nowrap;}
+.lbl-next{background:#0c1f3d;color:#58a6ff;border:1px solid #1f6feb;}
+.lbl-prev{background:#2d1317;color:#da3633;border:1px solid #da3633;}
+.lbl-curr{background:#12261e;color:#56d364;border:1px solid #238636;}
+.arr-r{font-size:16px;color:#484f58;line-height:1;}
+.arr-l{font-size:16px;color:#484f58;line-height:1;}
+.arr-r.hot,.arr-l.hot{color:#ffa657;font-weight:900;}
+.null-end{display:flex;flex-direction:column;justify-content:center;font-size:12px;color:#484f58;margin-left:2px;gap:6px;}
+.detached-wrap{margin-top:10px;padding:10px 14px;border:1px dashed #da3633;border-radius:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.detached-lbl{font-size:11px;color:#da3633;}
+.changes-panel{margin-top:16px;border:1px solid #ffa657;border-radius:8px;overflow:hidden;}
+.changes-hdr{background:#2d1a00;padding:7px 14px;font-size:10px;font-weight:700;color:#ffa657;text-transform:uppercase;letter-spacing:1px;}
+.change-row{padding:10px 14px;border-bottom:1px solid #21262d;font-size:12px;line-height:1.9;}
+.change-row:last-child{border-bottom:none;}
+.change-code{font-family:'Cascadia Code',Consolas,monospace;display:block;background:#0a0e13;padding:4px 10px;border-radius:4px;color:#d2a8ff;margin-bottom:6px;font-size:12px;}
+.was{color:#8b949e;}.was span{font-family:monospace;color:#da3633;text-decoration:line-through;}
+.now{color:#c9d1d9;}.now span{font-family:monospace;color:#56d364;font-weight:700;}
+.why{margin-top:4px;font-size:11px;color:#6e7681;font-style:italic;line-height:1.6;}
+.no-change{margin-top:14px;padding:8px 14px;border:1px solid #21262d;border-radius:6px;font-size:11px;color:#484f58;font-style:italic;}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;padding-top:16px;border-top:1px solid #21262d;}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:#8b949e;}
+.legend-dot{width:12px;height:12px;border-radius:3px;}
+.code-block{background:#0a0e13;border:1px solid #21262d;border-radius:8px;padding:14px;font-family:'Cascadia Code',Consolas,monospace;font-size:12.5px;line-height:2.1;}
+.code-line{padding:1px 8px;border-radius:4px;border-left:3px solid transparent;white-space:pre;transition:all .3s;}
+.code-line.active{background:rgba(86,211,100,.08);border-left-color:#56d364;}
+.kw{color:#ff7b72;}.fn{color:#d2a8ff;}.cm{color:#6e7681;font-style:italic;}.nu{color:#f78166;}.var{color:#79c0ff;}
+.vars-section{margin-top:20px;}
+.vars-grid{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;align-items:center;margin-top:10px;}
+.var-name{font-family:monospace;color:#79c0ff;font-size:13px;}
+.var-val{font-family:monospace;font-size:12px;background:#0a0e13;border:1px solid #21262d;padding:3px 10px;border-radius:4px;color:#a5d6ff;}
+.var-val.null-val{color:#484f58;}
+.bottom{border-top:1px solid #21262d;padding:14px 24px;display:flex;align-items:center;gap:14px;}
+.explain-box{flex:1;background:#161b22;border:1px solid #30363d;border-left:3px solid #56d364;border-radius:4px;padding:12px 16px;font-size:13px;line-height:1.75;color:#c9d1d9;min-height:56px;}
+.step-num{font-size:12px;color:#6e7681;white-space:nowrap;}
+.btn{padding:8px 20px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700;transition:all .2s;}
+.btn:disabled{opacity:.3;cursor:not-allowed;}
+.btn-prev{background:#21262d;color:#c9d1d9;border:1px solid #30363d;}
+.btn-prev:not(:disabled):hover{background:#30363d;}
+.btn-next{background:#238636;color:#fff;}
+.btn-next:not(:disabled):hover{background:#2ea043;}
+.key-hint{font-size:11px;color:#484f58;text-align:center;padding:4px;border-top:1px solid #21262d;}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>LeetCode 203 — Remove Linked List Elements (Doubly Linked List)</h1>
+  <div class="badges">
+    <span class="badge b-easy">Easy</span>
+    <span class="badge b-time">⏱ O(n)</span>
+    <span class="badge b-space">💾 O(1)</span>
+    <span class="badge b-dll">⇄ DLL</span>
+  </div>
+</div>
+<div class="progress"><div class="progress-fill" id="prog"></div></div>
+<div class="main">
+  <div class="panel">
+    <div class="panel-title">Visualization — Input: [1⇄2⇄6⇄3⇄6],  val = 6</div>
+    <div id="vizContent"></div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#238636;"></div>curr</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#da3633;"></div>to_remove</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#8957e5;"></div>result</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ffa657;"></div>arrow changed ↷</div>
+      <div class="legend-item" style="margin-top:4px;width:100%;color:#6e7681;font-size:11px;">→ is .next  |  ← is .prev  (DLL has both)</div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">Code</div>
+    <div class="code-block">
+      <div class="code-line" data-ln="0"><span class="kw">def</span> <span class="fn">removeElements</span>(head, val):</div>
+      <div class="code-line" data-ln="1">    <span class="var">dummy</span> = DLLNode(<span class="nu">0</span>)</div>
+      <div class="code-line" data-ln="2">    <span class="var">dummy</span>.next = head; head.prev = <span class="var">dummy</span></div>
+      <div class="code-line" data-ln="3">    <span class="var">curr</span> = <span class="var">dummy</span></div>
+      <div class="code-line" data-ln="4"> </div>
+      <div class="code-line" data-ln="5">    <span class="kw">while</span> <span class="var">curr</span>.next:</div>
+      <div class="code-line" data-ln="6">        <span class="kw">if</span> <span class="var">curr</span>.next.val == val:</div>
+      <div class="code-line" data-ln="7">            <span class="var">to_remove</span> = <span class="var">curr</span>.next</div>
+      <div class="code-line" data-ln="8">            <span class="var">curr</span>.next = <span class="var">to_remove</span>.next</div>
+      <div class="code-line" data-ln="9">            <span class="kw">if</span> <span class="var">to_remove</span>.next:</div>
+      <div class="code-line" data-ln="10">                <span class="var">to_remove</span>.next.prev = <span class="var">curr</span></div>
+      <div class="code-line" data-ln="11">            <span class="var">to_remove</span>.next = <span class="var">to_remove</span>.prev = <span class="kw">None</span></div>
+      <div class="code-line" data-ln="12">        <span class="kw">else</span>:</div>
+      <div class="code-line" data-ln="13">            <span class="var">curr</span> = <span class="var">curr</span>.next</div>
+      <div class="code-line" data-ln="14"> </div>
+      <div class="code-line" data-ln="15">    <span class="kw">if</span> <span class="var">dummy</span>.next: <span class="var">dummy</span>.next.prev = <span class="kw">None</span></div>
+      <div class="code-line" data-ln="16">    <span class="kw">return</span> <span class="var">dummy</span>.next</div>
+    </div>
+    <div class="vars-section">
+      <div class="panel-title">Variables</div>
+      <div class="vars-grid" id="varsGrid"></div>
+    </div>
+  </div>
+</div>
+<div class="bottom">
+  <button class="btn btn-prev" id="btnP" onclick="go(-1)">← Prev</button>
+  <div class="explain-box" id="explain"></div>
+  <span class="step-num" id="stepNum"></span>
+  <button class="btn btn-next" id="btnN" onclick="go(1)">Next →</button>
+</div>
+<div class="key-hint">Keyboard: ← → arrow keys to navigate</div>
+
+<script>
+/* arrs entry: { fwd:{lbl,hot}, bwd:{lbl,hot} } or null */
+const STEPS = [
+  {
+    phase:"Step 0 — Problem Setup", ln:0,
+    nodes:[{v:1,t:''},{v:2,t:''},{v:6,t:'t-remove'},{v:3,t:''},{v:6,t:'t-remove'}],
+    arrs:[null,null,null,null],
+    label:"Input DLL: 1 ⇄ 2 ⇄ 6 ⇄ 3 ⇄ 6,  val = 6.  Red nodes are targets.",
+    vars:{curr:'—', to_remove:'—'},
+    changes:[],
+    explain:"We need to remove every node whose value is 6. In a DLL, deletion requires two updates per removed node: the forward skip (curr.next = to_remove.next) AND the backward backlink (to_remove.next.prev = curr). SLL only needs the forward skip — DLL always needs both."
+  },
+  {
+    phase:"Step 1 — Create dummy, set curr = dummy  (lines 1–3)", ln:3,
+    nodes:[{v:'D',t:'dummy',p:['curr']},{v:1,t:''},{v:2,t:''},{v:6,t:'t-remove'},{v:3,t:''},{v:6,t:'t-remove'}],
+    arrs:[
+      {fwd:{lbl:'dummy.next',hot:true},bwd:{lbl:'1.prev→D',hot:true}},
+      null,null,null,null
+    ],
+    label:"dummy.next = head (node 1)  |  head.prev = dummy  |  curr = dummy",
+    vars:{curr:'dummy(D)', to_remove:'—'},
+    changes:[
+      {code:'dummy.next = head   head.prev = dummy   curr = dummy',
+       was:'dummy.next → nothing  |  head.prev → nothing',
+       now:'dummy.next → node(1)  |  node(1).prev → dummy',
+       why:'Two arrows created at once: the forward link dummy.next→1 AND the backward link 1.prev→dummy. Every DLL connection is bidirectional — creating one direction always means creating the other.'}
+    ],
+    explain:"Dummy is in place and curr sits on it. Notice TWO arrows between D and node(1): the → (forward, .next) and the ← (backward, .prev). This is the DLL difference — every connection is two arrows, not one."
+  },
+  {
+    phase:"Step 2 — Check curr.next.val: node(1).val=1 ≠ 6  (line 6)", ln:6,
+    nodes:[{v:'D',t:'dummy',p:['curr']},{v:1,t:''},{v:2,t:''},{v:6,t:'t-remove'},{v:3,t:''},{v:6,t:'t-remove'}],
+    arrs:[
+      {fwd:{lbl:'curr.next→',hot:false},bwd:{lbl:'1.prev',hot:false}},
+      null,null,null,null
+    ],
+    label:"curr.next is node(1). val=1 ≠ 6 → go to else: advance curr",
+    vars:{curr:'dummy(D)', to_remove:'—'},
+    changes:[],
+    explain:"curr.next is node(1) with val=1. 1 ≠ 6 so we skip to the else branch and advance curr. No arrows change — just a check."
+  },
+  {
+    phase:"Step 3 — curr = curr.next  (line 13)", ln:13,
+    nodes:[{v:'D',t:'dummy'},{v:1,t:'',p:['curr']},{v:2,t:''},{v:6,t:'t-remove'},{v:3,t:''},{v:6,t:'t-remove'}],
+    arrs:[
+      null,
+      {fwd:{lbl:'curr.next→',hot:false},bwd:{lbl:'2.prev',hot:false}},
+      null,null,null
+    ],
+    label:"curr advances to node(1)",
+    vars:{curr:'node(1)', to_remove:'—'},
+    changes:[
+      {code:'curr = curr.next',
+       was:'curr → dummy(D)',
+       now:'curr → node(1)',
+       why:'No arrow changed — just curr moved forward. The .next label moves with curr to show what curr.next now points at.'}
+    ],
+    explain:"curr is now at node(1). The curr.next label is now on the arrow from node(1) to node(2). curr.next.val = 2 ≠ 6, so we advance again."
+  },
+  {
+    phase:"Step 4 — Advance curr to node(2)  (line 13)", ln:13,
+    nodes:[{v:'D',t:'dummy'},{v:1,t:''},{v:2,t:'',p:['curr']},{v:6,t:'t-remove'},{v:3,t:''},{v:6,t:'t-remove'}],
+    arrs:[
+      null,null,
+      {fwd:{lbl:'curr.next→',hot:false},bwd:{lbl:'6.prev',hot:false}},
+      null,null
+    ],
+    label:"curr advances to node(2). Now curr.next is the first node(6) — a target!",
+    vars:{curr:'node(2)', to_remove:'—'},
+    changes:[
+      {code:'curr = curr.next',
+       was:'curr → node(1)',
+       now:'curr → node(2)',
+       why:'curr.next is now node(6) which has val=6. Match found — enter the removal branch.'}
+    ],
+    explain:"curr is at node(2). curr.next = node(6) which matches val=6. We enter the if-branch to remove it."
+  },
+  {
+    phase:"Step 5 — to_remove = curr.next = node(6)  (line 7)", ln:7,
+    nodes:[{v:'D',t:'dummy'},{v:1,t:''},{v:2,t:'',p:['curr']},{v:6,t:'t-remove',p:['to_remove']},{v:3,t:''},{v:6,t:'t-remove'}],
+    arrs:[
+      null,null,
+      {fwd:{lbl:'curr.next→',hot:false},bwd:{lbl:'6.prev',hot:false}},
+      null,null
+    ],
+    label:"Save curr.next into to_remove BEFORE cutting the connection",
+    vars:{curr:'node(2)', to_remove:'node(6)'},
+    changes:[
+      {code:'to_remove = curr.next',
+       was:'to_remove → nothing',
+       now:'to_remove → node(6)',
+       why:'We save node(6) before we break the pointer to it. If we changed curr.next first, we would lose node(6) permanently — nothing would point to it anymore.'}
+    ],
+    explain:"to_remove = node(6). Red border confirms the target. Now we perform the DLL deletion in 2 steps: Step A — forward skip (curr.next). Step B — backward backlink (to_remove.next.prev)."
+  },
+  {
+    phase:"Step 6 — curr.next = to_remove.next  (line 8)  ← forward skip", ln:8,
+    nodes:[{v:'D',t:'dummy'},{v:1,t:''},{v:2,t:'',p:['curr']},{v:3,t:''},{v:6,t:'t-remove'}],
+    arrs:[
+      null,null,
+      {fwd:{lbl:'curr.next ↷',hot:true},bwd:{lbl:'3.prev',hot:false}},
+      null
+    ],
+    label:"curr.next now skips over node(6) → points directly to node(3)",
+    vars:{curr:'node(2)', to_remove:'node(6)'},
+    detached:[{v:6,t:'t-remove',p:['to_remove']}],
+    detachedNote:'to_remove.next.prev still points back to node(6) — MUST fix next!',
+    changes:[
+      {code:'curr.next = to_remove.next',
+       was:'curr.next → node(6)',
+       now:'curr.next → node(3)',
+       why:'The forward arrow from node(2) now skips over the target. Node(6) is detached from the forward chain. BUT — node(3).prev still points back to node(6). We must fix that backward link next.'}
+    ],
+    explain:"ARROW CHANGED ↷: curr.next skipped over node(6) and now points to node(3). But this is only HALF the DLL deletion. The backward arrow from node(3) back to node(6) is still there — we must update node(3).prev to point to node(2) instead."
+  },
+  {
+    phase:"Step 7 — to_remove.next.prev = curr  (line 10)  ← backward backlink", ln:10,
+    nodes:[{v:'D',t:'dummy'},{v:1,t:''},{v:2,t:'',p:['curr']},{v:3,t:''},{v:6,t:'t-remove'}],
+    arrs:[
+      null,null,
+      {fwd:{lbl:'curr.next',hot:false},bwd:{lbl:'3.prev ↷',hot:true}},
+      null
+    ],
+    label:"node(3).prev now points back to node(2) — DLL deletion complete",
+    vars:{curr:'node(2)', to_remove:'node(6)'},
+    detached:[{v:6,t:'t-remove',p:['to_remove']}],
+    detachedNote:'node(6) is now fully isolated — no arrows in or out',
+    changes:[
+      {code:'to_remove.next.prev = curr',
+       was:'node(3).prev → node(6)',
+       now:'node(3).prev → node(2)',
+       why:'The backward arrow from node(3) used to point back to node(6). Now it correctly points to node(2) — the new predecessor. Both directions of the DLL are now consistent. This is the DLL-specific step SLL deletion does not need.'}
+    ],
+    explain:"ARROW CHANGED ↷: node(3).prev used to point to node(6). Now it points to node(2). The DLL connection between node(2) and node(3) is complete in BOTH directions. Node(6) is fully isolated — no node points to it, it points to nothing."
+  },
+  {
+    phase:"Step 8 — Advance curr past the second node(6)  (lines 6→13→6→7→8→10)", ln:8,
+    nodes:[{v:'D',t:'dummy'},{v:1,t:''},{v:2,t:''},{v:3,t:'',p:['curr']},{v:6,t:'t-remove'}],
+    arrs:[
+      null,null,null,
+      {fwd:{lbl:'curr.next ↷',hot:true},bwd:{lbl:'∅.prev',hot:false}}
+    ],
+    label:"curr advances to node(3). Second node(6) detected and removed — curr.next = null",
+    vars:{curr:'node(3)', to_remove:'node(6)'},
+    changes:[
+      {code:'curr = curr.next   then: curr.next = to_remove.next',
+       was:'curr.next → node(6)  (second one)',
+       now:'curr.next → null',
+       why:'node(3) was not a target so curr advanced to it. Then curr.next = the second node(6) which is a target. curr.next = to_remove.next = null. The tail is removed.'}
+    ],
+    explain:"ARROW CHANGED ↷: curr moved to node(3), found the second node(6), and removed it. curr.next is now null — the loop condition `while curr.next` will fail and we exit."
+  },
+  {
+    phase:"Step 9 — Return dummy.next  (line 16)", ln:16,
+    nodes:[{v:1,t:'t-result'},{v:2,t:'t-result'},{v:3,t:'t-result'}],
+    arrs:[
+      {fwd:{lbl:'1→2.next',hot:false},bwd:{lbl:'2.prev',hot:false}},
+      {fwd:{lbl:'2→3.next',hot:false},bwd:{lbl:'3.prev',hot:false}}
+    ],
+    label:"✓ Result: 1 ⇄ 2 ⇄ 3  — both nodes with value 6 removed",
+    vars:{curr:'node(3)', to_remove:'node(6)'},
+    changes:[],
+    explain:"Return dummy.next = node(1). Both 6s removed. The DLL is valid — every → has a matching ←. Total: 2 deletions × 2 arrow changes each = 4 arrow changes. O(n) time, O(1) space."
+  }
+];
+
+let cur=0;
+function nodeH(n){
+  const ptrs=(n.p||[]).map(l=>`<span class="ptr-tag ${l==='curr'?'curr':'target'}">${l}</span>`).join('');
+  const tc=(!n.t||n.t==='normal')?'':(n.t==='dummy'?'t-dummy':n.t);
+  return `<div class="node-col"><div class="ptr-row">${ptrs}</div><div class="node-box ${tc}">${n.v}</div></div>`;
+}
+function connH(a){
+  if(!a)return`<div class="dll-conn"><div class="conn-fwd"><span class="arr-r">→</span></div><div class="conn-bwd"><span class="arr-l">←</span></div></div>`;
+  const fR=a.fwd?`<span class="conn-lbl lbl-curr">${a.fwd.lbl}</span><span class="arr-r${a.fwd.hot?' hot':''}">→</span>`:`<span class="arr-r">→</span>`;
+  const bR=a.bwd?`<span class="arr-l${a.bwd.hot?' hot':''}">←</span><span class="conn-lbl lbl-prev">${a.bwd.lbl}</span>`:`<span class="arr-l">←</span>`;
+  return`<div class="dll-conn"><div class="conn-fwd">${fR}</div><div class="conn-bwd">${bR}</div></div>`;
+}
+function changesH(ch){
+  if(!ch||!ch.length)return`<div class="no-change">No .next or .prev pointers changed this step.</div>`;
+  let h=`<div class="changes-panel"><div class="changes-hdr">↷ Arrow changes this step</div>`;
+  ch.forEach(c=>{h+=`<div class="change-row"><code class="change-code">${c.code}</code><div class="was">Before: <span>${c.was}</span></div><div class="now">After:&nbsp; <span>${c.now}</span></div><div class="why">${c.why}</div></div>`;});
+  return h+`</div>`;
+}
+function render(){
+  const s=STEPS[cur];
+  let lH=`<div class="list-label">${s.label}</div><div class="dll-list">`;
+  s.nodes.forEach((n,i)=>{
+    lH+=nodeH(n);
+    if(i<s.nodes.length-1)lH+=connH(s.arrs?s.arrs[i]:null);
+  });
+  lH+=`<div class="null-end"><span>→null</span><span>null←</span></div></div>`;
+  if(s.detached&&s.detached.length){
+    lH+=`<div class="detached-wrap"><span class="detached-lbl">isolated (removed):</span>`;
+    s.detached.forEach(n=>{lH+=nodeH(n);});
+    if(s.detachedNote)lH+=`<span style="font-size:11px;color:#6e7681;font-style:italic;">${s.detachedNote}</span>`;
+    lH+=`</div>`;
+  }
+  document.getElementById('vizContent').innerHTML=`<div class="phase-pill">${s.phase}</div>`+lH+changesH(s.changes);
+  document.querySelectorAll('.code-line').forEach(e=>e.classList.remove('active'));
+  const al=document.querySelector(`.code-line[data-ln="${s.ln}"]`);
+  if(al)al.classList.add('active');
+  let vh='';
+  for(const[k,v] of Object.entries(s.vars))vh+=`<span class="var-name">${k}</span><span class="var-val${v==='—'?' null-val':''}">${v}</span>`;
+  document.getElementById('varsGrid').innerHTML=vh;
+  document.getElementById('explain').textContent=s.explain;
+  document.getElementById('stepNum').textContent=`Step ${cur+1} / ${STEPS.length}`;
+  document.getElementById('prog').style.width=`${((cur+1)/STEPS.length)*100}%`;
+  document.getElementById('btnP').disabled=cur===0;
+  document.getElementById('btnN').disabled=cur===STEPS.length-1;
+}
+function go(d){const n=cur+d;if(n>=0&&n<STEPS.length){cur=n;render();}}
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown')go(1);
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp')go(-1);
+});
+render();
+</script>
+</body>
+</html>

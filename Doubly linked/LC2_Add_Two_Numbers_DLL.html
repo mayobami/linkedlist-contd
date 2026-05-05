@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LeetCode 2 — Add Two Numbers (DLL)</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0d1117;color:#c9d1d9;min-height:100vh;display:flex;flex-direction:column;}
+.header{background:linear-gradient(135deg,#161b22,#21262d);padding:18px 28px;border-bottom:1px solid #30363d;display:flex;align-items:center;justify-content:space-between;}
+.header h1{font-size:18px;color:#58a6ff;font-weight:700;}
+.badges{display:flex;gap:8px;}
+.badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.b-med{background:#3d2b00;color:#ffa657;}
+.b-time{background:#0d2b0d;color:#56d364;}
+.b-space{background:#0c2233;color:#58a6ff;}
+.b-dll{background:#1b1327;color:#d2a8ff;border:1px solid #8957e5;}
+.progress{height:3px;background:#21262d;}
+.progress-fill{height:100%;background:#58a6ff;transition:width .4s ease;}
+.main{display:grid;grid-template-columns:1fr 1fr;flex:1;overflow:hidden;}
+.panel{padding:20px;overflow-y:auto;border-right:1px solid #21262d;}
+.panel-title{font-size:11px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:16px;}
+.phase-pill{display:inline-block;padding:4px 12px;background:#161b22;border:1px solid #30363d;border-radius:16px;font-size:12px;color:#8b949e;margin-bottom:12px;}
+.list-label{font-size:12px;color:#6e7681;margin-bottom:8px;font-style:italic;}
+.dll-list{display:flex;align-items:center;flex-wrap:wrap;margin-bottom:4px;}
+.list-group{margin-bottom:10px;}
+.list-tag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-bottom:6px;display:inline-block;}
+.tag-l1{background:#0c1f3d;color:#58a6ff;}
+.tag-l2{background:#1b1327;color:#d2a8ff;}
+.tag-res{background:#0d2b0d;color:#56d364;}
+.node-col{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.ptr-row{height:20px;display:flex;align-items:center;justify-content:center;gap:3px;}
+.ptr-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;white-space:nowrap;}
+.ptr-tag.p1{background:#1f6feb;color:#fff;}
+.ptr-tag.p2{background:#6e40c9;color:#fff;}
+.ptr-tag.t1{background:#da3633;color:#fff;}
+.ptr-tag.t2{background:#3d2b00;color:#ffa657;border:1px solid #ffa657;}
+.node-box{width:50px;height:50px;border:2px solid #30363d;border-radius:8px;background:#161b22;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;transition:all .35s ease;}
+.node-box.t-p1{border-color:#1f6feb;background:#0c1f3d;box-shadow:0 0 12px rgba(31,111,235,.3);}
+.node-box.t-p2{border-color:#8957e5;background:#1b1327;box-shadow:0 0 12px rgba(137,87,229,.3);}
+.node-box.t-tail{border-color:#da3633;background:#2d1317;box-shadow:0 0 12px rgba(218,54,51,.3);}
+.node-box.t-res{border-color:#56d364;background:#0d2b0d;box-shadow:0 0 12px rgba(86,211,100,.3);}
+.dll-conn{display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 1px;}
+.conn-fwd{display:flex;align-items:center;gap:2px;margin-bottom:2px;}
+.conn-bwd{display:flex;align-items:center;gap:2px;margin-top:2px;}
+.conn-lbl{font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;white-space:nowrap;}
+.lbl-f{background:#0c1f3d;color:#58a6ff;border:1px solid #1f6feb;}
+.lbl-b{background:#2d1317;color:#da3633;border:1px solid #da3633;}
+.lbl-h{background:#2d1a00;color:#ffa657;border:1px solid #ffa657;}
+.arr-r{font-size:15px;color:#484f58;line-height:1;}
+.arr-l{font-size:15px;color:#484f58;line-height:1;}
+.arr-r.hot,.arr-l.hot{color:#ffa657;font-weight:900;}
+.null-end{display:flex;flex-direction:column;justify-content:center;font-size:11px;color:#484f58;margin-left:2px;gap:5px;}
+.calc-box{margin-top:10px;padding:10px 14px;background:#0a0e13;border:1px solid #21262d;border-radius:6px;font-size:13px;font-family:monospace;}
+.calc-title{font-size:10px;color:#8b949e;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+.calc-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:4px;}
+.calc-val{color:#79c0ff;}.calc-op{color:#484f58;}.calc-sum{color:#56d364;font-weight:700;}.calc-carry{color:#ffa657;}
+.changes-panel{margin-top:12px;border:1px solid #ffa657;border-radius:8px;overflow:hidden;}
+.changes-hdr{background:#2d1a00;padding:6px 14px;font-size:10px;font-weight:700;color:#ffa657;text-transform:uppercase;letter-spacing:1px;}
+.change-row{padding:9px 14px;border-bottom:1px solid #21262d;font-size:12px;line-height:1.9;}
+.change-row:last-child{border-bottom:none;}
+.change-code{font-family:'Cascadia Code',Consolas,monospace;display:block;background:#0a0e13;padding:3px 10px;border-radius:4px;color:#d2a8ff;margin-bottom:5px;font-size:11px;}
+.was{color:#8b949e;}.was span{font-family:monospace;color:#da3633;text-decoration:line-through;}
+.now{color:#c9d1d9;}.now span{font-family:monospace;color:#56d364;font-weight:700;}
+.why{margin-top:4px;font-size:11px;color:#6e7681;font-style:italic;line-height:1.6;}
+.no-change{margin-top:10px;padding:7px 14px;border:1px solid #21262d;border-radius:6px;font-size:11px;color:#484f58;font-style:italic;}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid #21262d;}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#8b949e;}
+.legend-dot{width:11px;height:11px;border-radius:3px;}
+.code-block{background:#0a0e13;border:1px solid #21262d;border-radius:8px;padding:12px;font-family:'Cascadia Code',Consolas,monospace;font-size:11.5px;line-height:2;}
+.code-line{padding:1px 8px;border-radius:4px;border-left:3px solid transparent;white-space:pre;transition:all .3s;}
+.code-line.active{background:rgba(88,166,255,.08);border-left-color:#58a6ff;}
+.kw{color:#ff7b72;}.fn{color:#d2a8ff;}.cm{color:#6e7681;font-style:italic;}.nu{color:#f78166;}.var{color:#79c0ff;}
+.vars-section{margin-top:18px;}
+.vars-grid{display:grid;grid-template-columns:auto 1fr;gap:7px 12px;align-items:center;margin-top:9px;}
+.var-name{font-family:monospace;color:#79c0ff;font-size:12px;}
+.var-val{font-family:monospace;font-size:11px;background:#0a0e13;border:1px solid #21262d;padding:3px 8px;border-radius:4px;color:#a5d6ff;}
+.var-val.null-val{color:#484f58;}
+.bottom{border-top:1px solid #21262d;padding:12px 22px;display:flex;align-items:center;gap:12px;}
+.explain-box{flex:1;background:#161b22;border:1px solid #30363d;border-left:3px solid #58a6ff;border-radius:4px;padding:11px 14px;font-size:13px;line-height:1.75;color:#c9d1d9;min-height:54px;}
+.step-num{font-size:12px;color:#6e7681;white-space:nowrap;}
+.btn{padding:7px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700;transition:all .2s;}
+.btn:disabled{opacity:.3;cursor:not-allowed;}
+.btn-prev{background:#21262d;color:#c9d1d9;border:1px solid #30363d;}
+.btn-prev:not(:disabled):hover{background:#30363d;}
+.btn-next{background:#1f6feb;color:#fff;}
+.btn-next:not(:disabled):hover{background:#388bfd;}
+.key-hint{font-size:11px;color:#484f58;text-align:center;padding:4px;border-top:1px solid #21262d;}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>LeetCode 2 — Add Two Numbers (DLL, Forward-Order Digits)</h1>
+  <div class="badges">
+    <span class="badge b-med">Medium</span>
+    <span class="badge b-time">⏱ O(max(m,n))</span>
+    <span class="badge b-space">💾 O(max(m,n))</span>
+    <span class="badge b-dll">⇄ DLL</span>
+  </div>
+</div>
+<div class="progress"><div class="progress-fill" id="prog"></div></div>
+<div class="main">
+  <div class="panel">
+    <div class="panel-title">Visualization — 3⇄4⇄2 (342) + 4⇄6⇄5 (465) = 807</div>
+    <div id="vizContent"></div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#1f6feb;"></div>p1 (walks ← via .prev)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#8957e5;"></div>p2 (walks ← via .prev)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#da3633;"></div>tail pointer</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#56d364;"></div>result node</div>
+      <div class="legend-item" style="margin-top:4px;width:100%;color:#6e7681;font-size:11px;">DLL insight: digits stored MSB-first. Walk backwards via .prev to add LSB-first. Prepend each result digit.</div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">Code</div>
+    <div class="code-block">
+      <div class="code-line" data-ln="0"><span class="kw">def</span> <span class="fn">addTwoNumbers</span>(l1, l2):</div>
+      <div class="code-line" data-ln="1">    <span class="cm"># Find tails (least significant digits)</span></div>
+      <div class="code-line" data-ln="2">    <span class="var">tail1</span> = l1</div>
+      <div class="code-line" data-ln="3">    <span class="kw">while</span> <span class="var">tail1</span>.next: <span class="var">tail1</span>=<span class="var">tail1</span>.next</div>
+      <div class="code-line" data-ln="4">    <span class="var">tail2</span> = l2</div>
+      <div class="code-line" data-ln="5">    <span class="kw">while</span> <span class="var">tail2</span>.next: <span class="var">tail2</span>=<span class="var">tail2</span>.next</div>
+      <div class="code-line" data-ln="6">    <span class="var">p1</span>, <span class="var">p2</span> = <span class="var">tail1</span>, <span class="var">tail2</span></div>
+      <div class="code-line" data-ln="7">    <span class="var">carry</span> = <span class="nu">0</span>; <span class="var">result_head</span> = <span class="kw">None</span></div>
+      <div class="code-line" data-ln="8">    <span class="kw">while</span> <span class="var">p1</span> <span class="kw">or</span> <span class="var">p2</span> <span class="kw">or</span> <span class="var">carry</span>:</div>
+      <div class="code-line" data-ln="9">        <span class="var">total</span> = <span class="var">carry</span></div>
+      <div class="code-line" data-ln="10">        <span class="kw">if</span> <span class="var">p1</span>: <span class="var">total</span>+=<span class="var">p1</span>.val; <span class="var">p1</span>=<span class="var">p1</span>.prev</div>
+      <div class="code-line" data-ln="11">        <span class="kw">if</span> <span class="var">p2</span>: <span class="var">total</span>+=<span class="var">p2</span>.val; <span class="var">p2</span>=<span class="var">p2</span>.prev</div>
+      <div class="code-line" data-ln="12">        <span class="var">carry</span>, <span class="var">digit</span> = divmod(<span class="var">total</span>, <span class="nu">10</span>)</div>
+      <div class="code-line" data-ln="13">        <span class="cm"># Prepend to result</span></div>
+      <div class="code-line" data-ln="14">        <span class="var">new_node</span> = DLLNode(<span class="var">digit</span>)</div>
+      <div class="code-line" data-ln="15">        <span class="var">new_node</span>.next = <span class="var">result_head</span></div>
+      <div class="code-line" data-ln="16">        <span class="kw">if</span> <span class="var">result_head</span>: <span class="var">result_head</span>.prev = <span class="var">new_node</span></div>
+      <div class="code-line" data-ln="17">        <span class="var">result_head</span> = <span class="var">new_node</span></div>
+      <div class="code-line" data-ln="18">    <span class="kw">return</span> <span class="var">result_head</span></div>
+    </div>
+    <div class="vars-section">
+      <div class="panel-title">Variables</div>
+      <div class="vars-grid" id="varsGrid"></div>
+    </div>
+  </div>
+</div>
+<div class="bottom">
+  <button class="btn btn-prev" id="btnP" onclick="go(-1)">← Prev</button>
+  <div class="explain-box" id="explain"></div>
+  <span class="step-num" id="stepNum"></span>
+  <button class="btn btn-next" id="btnN" onclick="go(1)">Next →</button>
+</div>
+<div class="key-hint">Keyboard: ← → arrow keys to navigate</div>
+<script>
+const STEPS=[
+  {phase:"Step 0 — Problem Setup",ln:0,
+   l1:[{v:3,t:''},{v:4,t:''},{v:2,t:''}],l2:[{v:4,t:''},{v:6,t:''},{v:5,t:''}],res:[],
+   calc:null,vars:{p1:'—',p2:'—',carry:'0',digit:'—'},changes:[],
+   explain:"Digits stored MSB-first (reading order): 3→4→2 = 342, 4→6→5 = 465. Standard LC2 SLL stores LSB-first so you add head-to-head. DLL version: keep natural order, walk backwards via .prev to add from the least significant digit. Result is prepended to maintain MSB-first order."
+  },
+  {phase:"Step 1 — Find tails  (lines 2–5)",ln:5,
+   l1:[{v:3,t:''},{v:4,t:''},{v:2,t:'t-tail',p:['tail1→p1']}],
+   l2:[{v:4,t:''},{v:6,t:''},{v:5,t:'t-tail',p:['tail2→p2']}],
+   res:[],calc:null,
+   vars:{p1:'node(2) val=2',p2:'node(5) val=5',carry:'0',digit:'—'},changes:[],
+   explain:"Walk tail1 to node(2) — the rightmost (least significant) digit of 342. Walk tail2 to node(5). Both p1 and p2 start at the tails. They will walk LEFT (backwards) using .prev — the DLL superpower."
+  },
+  {phase:"Step 2 — Iter 1: add p1.val=2 + p2.val=5 + carry=0  (lines 8–12)",ln:12,
+   l1:[{v:3,t:''},{v:4,t:''},{v:2,t:'t-p1',p:['p1']}],
+   l2:[{v:4,t:''},{v:6,t:''},{v:5,t:'t-p2',p:['p2']}],
+   res:[],
+   calc:{v1:2,v2:5,c:0,total:7,carry:0,digit:7},
+   vars:{p1:'node(2) val=2',p2:'node(5) val=5',carry:'0→0',digit:'7'},changes:[],
+   explain:"p1 reads val=2, p2 reads val=5. total = 0+2+5 = 7. divmod(7,10) → carry=0, digit=7. Now we prepend digit=7 to the result (build MSB-first by prepending the LSB first). p1 and p2 retreat: p1 = p1.prev = node(4), p2 = p2.prev = node(6)."
+  },
+  {phase:"Step 3 — Prepend digit=7 to result  (lines 14–17)",ln:17,
+   l1:[{v:3,t:''},{v:4,t:'t-p1',p:['p1']},{v:2,t:''}],
+   l2:[{v:4,t:''},{v:6,t:'t-p2',p:['p2']},{v:5,t:''}],
+   res:[{v:7,t:'t-res'}],
+   calc:null,
+   vars:{p1:'node(4) val=4',p2:'node(6) val=6',carry:'0',digit:'7'},
+   changes:[{code:'new_node=DLLNode(7)   new_node.next=result_head   result_head=new_node',was:'result_head → null',now:'result_head → node(7)',why:'Prepend: new digit goes BEFORE result_head. Since we compute LSB first (7), prepending means the final result will be MSB-first (8→0→7). Each new digit prepended becomes the new head.'}],
+   explain:"ARROW CHANGED ↷: node(7) created and prepended. result_head = node(7). p1 retreated to node(4) (using p1.prev). p2 retreated to node(6). Iteration 2 next: 4+6+0."
+  },
+  {phase:"Step 4 — Iter 2: add p1.val=4 + p2.val=6 + carry=0  (lines 8–12)",ln:12,
+   l1:[{v:3,t:''},{v:4,t:'t-p1',p:['p1']},{v:2,t:''}],
+   l2:[{v:4,t:''},{v:6,t:'t-p2',p:['p2']},{v:5,t:''}],
+   res:[{v:7,t:'t-res'}],
+   calc:{v1:4,v2:6,c:0,total:10,carry:1,digit:0},
+   vars:{p1:'node(4) val=4',p2:'node(6) val=6',carry:'0→1',digit:'0'},changes:[],
+   explain:"4+6+0 = 10. divmod(10,10) → carry=1, digit=0. Carry is generated! We prepend digit=0. p1 retreats to node(3), p2 retreats to node(4)."
+  },
+  {phase:"Step 5 — Prepend digit=0  (lines 14–17)",ln:17,
+   l1:[{v:3,t:'t-p1',p:['p1']},{v:4,t:''},{v:2,t:''}],
+   l2:[{v:4,t:'t-p2',p:['p2']},{v:6,t:''},{v:5,t:''}],
+   res:[{v:0,t:'t-res'},{v:7,t:'t-res'}],
+   calc:null,
+   vars:{p1:'node(3) val=3',p2:'node(4) val=4',carry:'1',digit:'0'},
+   changes:[{code:'new_node=DLLNode(0)   new_node.next=result_head(7)   result_head(7).prev=new_node   result_head=new_node',was:'result_head → node(7)',now:'result_head → node(0)  |  node(7).prev → node(0)',why:'Prepend digit=0 before node(7). Two pointers: new_node.next=result_head (forward) and result_head.prev=new_node (backward). The DLL is always kept valid in both directions as we build.'}],
+   explain:"ARROWS CHANGED ↷: node(0) prepended. Both → and ← set between node(0) and node(7). Result so far: 0⇄7. carry=1 carries over to next iteration."
+  },
+  {phase:"Step 6 — Iter 3: add p1.val=3 + p2.val=4 + carry=1  (lines 8–12)",ln:12,
+   l1:[{v:3,t:'t-p1',p:['p1']},{v:4,t:''},{v:2,t:''}],
+   l2:[{v:4,t:'t-p2',p:['p2']},{v:6,t:''},{v:5,t:''}],
+   res:[{v:0,t:'t-res'},{v:7,t:'t-res'}],
+   calc:{v1:3,v2:4,c:1,total:8,carry:0,digit:8},
+   vars:{p1:'null (exhausted)',p2:'null (exhausted)',carry:'1→0',digit:'8'},changes:[],
+   explain:"3+4+1 = 8. divmod(8,10) → carry=0, digit=8. p1 = p1.prev = null (exhausted). p2 = p2.prev = null (exhausted). carry=0. Loop exits after this prepend."
+  },
+  {phase:"Step 7 — Prepend digit=8  →  return result_head  (lines 14–18)",ln:18,
+   l1:[],l2:[],
+   res:[{v:8,t:'t-res'},{v:0,t:'t-res'},{v:7,t:'t-res'}],
+   calc:null,
+   vars:{p1:'null',p2:'null',carry:'0',digit:'8'},
+   changes:[{code:'new_node=DLLNode(8)   prepend to result   return result_head',was:'result_head → node(0)',now:'result_head → node(8)  — full DLL: 8⇄0⇄7',why:'Prepend digit=8 (MSB). Result is now 8→0→7 = 807 in MSB-first order. 342+465=807 ✓. The DLL was built by prepending LSB→MSB, giving the correct forward reading order automatically.'}],
+   explain:"ARROW CHANGED ↷: node(8) prepended. Result: 8⇄0⇄7 = 807. Built backwards (7 first, 0 second, 8 last) by prepending each digit — MSB-first output without any post-processing reversal."
+  }
+];
+let cur=0;
+function nodeH(n){
+  const ptrs=(n.p||[]).map(l=>{
+    const cls=l.startsWith('tail')||l.startsWith('p1')||l.includes('p1')?'p1':l.startsWith('p2')||l.includes('p2')?'p2':l.includes('tail')?'t1':'p1';
+    return`<span class="ptr-tag ${cls}">${l}</span>`;
+  }).join('');
+  const tc=(!n.t||n.t==='normal')?'':n.t;
+  return`<div class="node-col"><div class="ptr-row">${ptrs}</div><div class="node-box ${tc}">${n.v}</div></div>`;
+}
+function connH(rev){
+  return`<div class="dll-conn">
+    <div class="conn-fwd"><span class="arr-r">→</span></div>
+    <div class="conn-bwd"><span class="arr-l${rev?' hot':''}">←</span>${rev?`<span class="conn-lbl lbl-h">.prev walk</span>`:''}</div>
+  </div>`;
+}
+function listH(nodes,tag,rev){
+  if(!nodes||!nodes.length)return'';
+  let h=`<div class="list-group"><span class="list-tag ${tag==='l1'?'tag-l1':tag==='l2'?'tag-l2':'tag-res'}">${tag==='l1'?'l1 (342)':tag==='l2'?'l2 (465)':'Result'}</span><div class="dll-list">`;
+  nodes.forEach((n,i)=>{h+=nodeH(n);if(i<nodes.length-1)h+=connH(rev&&i===nodes.length-2);});
+  h+=`<div class="null-end"><span>→null</span><span>null←</span></div></div></div>`;
+  return h;
+}
+function calcH(c){
+  if(!c)return'';
+  return`<div class="calc-box"><div class="calc-title">Arithmetic this step</div>
+    <div class="calc-row">
+      <span class="calc-val">p1.val=${c.v1}</span><span class="calc-op">+</span>
+      <span class="calc-val">p2.val=${c.v2}</span><span class="calc-op">+</span>
+      <span class="calc-carry">carry=${c.c}</span><span class="calc-op">=</span>
+      <span class="calc-sum">total=${c.total}</span>
+    </div>
+    <div class="calc-row">
+      <span style="color:#6e7681;">divmod(${c.total},10)</span><span class="calc-op">→</span>
+      <span class="calc-carry">carry=${c.carry}</span><span class="calc-op">,</span>
+      <span class="calc-sum">digit=${c.digit}</span>
+    </div>
+  </div>`;
+}
+function changesH(ch){
+  if(!ch||!ch.length)return`<div class="no-change">No pointer changes — arithmetic or variable read only.</div>`;
+  let h=`<div class="changes-panel"><div class="changes-hdr">↷ Arrow changes this step</div>`;
+  ch.forEach(c=>{h+=`<div class="change-row"><code class="change-code">${c.code}</code><div class="was">Before: <span>${c.was}</span></div><div class="now">After:&nbsp; <span>${c.now}</span></div><div class="why">${c.why}</div></div>`;});
+  return h+`</div>`;
+}
+function render(){
+  const s=STEPS[cur];
+  const l1done=!s.l1||!s.l1.length;
+  const l2done=!s.l2||!s.l2.length;
+  let content=`<div class="phase-pill">${s.phase}</div>`;
+  if(!l1done)content+=listH(s.l1,'l1',true);
+  if(!l2done)content+=listH(s.l2,'l2',true);
+  if(s.res&&s.res.length)content+=listH(s.res,'res',false);
+  content+=calcH(s.calc)+changesH(s.changes);
+  document.getElementById('vizContent').innerHTML=content;
+  document.querySelectorAll('.code-line').forEach(e=>e.classList.remove('active'));
+  const al=document.querySelector(`.code-line[data-ln="${s.ln}"]`);
+  if(al)al.classList.add('active');
+  let vh='';
+  for(const[k,v] of Object.entries(s.vars))vh+=`<span class="var-name">${k}</span><span class="var-val${v==='—'?' null-val':''}">${v}</span>`;
+  document.getElementById('varsGrid').innerHTML=vh;
+  document.getElementById('explain').textContent=s.explain;
+  document.getElementById('stepNum').textContent=`Step ${cur+1} / ${STEPS.length}`;
+  document.getElementById('prog').style.width=`${((cur+1)/STEPS.length)*100}%`;
+  document.getElementById('btnP').disabled=cur===0;
+  document.getElementById('btnN').disabled=cur===STEPS.length-1;
+}
+function go(d){const n=cur+d;if(n>=0&&n<STEPS.length){cur=n;render();}}
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown')go(1);
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp')go(-1);
+});
+render();
+</script>
+</body>
+</html>
