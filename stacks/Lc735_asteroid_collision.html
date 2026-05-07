@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LC 735 — Asteroid Collision</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0d1117; color: #c9d1d9; font-family: 'Consolas','Monaco',monospace; min-height: 100vh; display: flex; flex-direction: column; }
+header { padding: 16px 28px; border-bottom: 1px solid #30363d; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+header h1 { font-size: 1.15rem; color: #e6edf3; }
+.badge { padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+.medium { background: #3d2b00; color: #ffa657; }
+.time-badge { background: #0c1f3d; color: #58a6ff; }
+.space-badge { background: #1b1327; color: #d2a8ff; }
+#progress { height: 3px; background: #21262d; flex-shrink: 0; }
+#progress-bar { height: 3px; background: #58a6ff; transition: width 0.25s; }
+main { display: grid; grid-template-columns: 1fr 1fr; flex: 1; min-height: 0; }
+.panel { border-right: 1px solid #30363d; padding: 18px 22px; overflow-y: auto; }
+.panel:last-child { border-right: none; }
+.phase-pill { display: inline-block; background: #21262d; color: #58a6ff; border: 1px solid #30363d; border-radius: 20px; padding: 4px 14px; font-size: 0.78rem; margin-bottom: 14px; }
+.arr-label { font-size: 0.72rem; color: #6e7681; margin-bottom: 6px; letter-spacing: 0.03em; }
+.arr-strip { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.ast-cell { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.ast-box { padding: 7px 11px; border: 1px solid #30363d; border-radius: 6px; font-size: 0.9rem; font-weight: 700; background: #161b22; color: #8b949e; min-width: 46px; text-align: center; transition: all 0.15s; }
+.ast-box.t-pos     { border-color: #238636; background: #0d2b0d; color: #56d364; }
+.ast-box.t-neg     { border-color: #da3633; background: #2d1317; color: #da3633; }
+.ast-box.t-curr-pos{ border-color: #56d364; background: #12261e; color: #56d364; box-shadow: 0 0 10px #56d36440; }
+.ast-box.t-curr-neg{ border-color: #da3633; background: #2d1317; color: #da3633; box-shadow: 0 0 10px #da363340; }
+.ast-box.t-dead    { border-color: #21262d; background: #0d1117; color: #484f58; text-decoration: line-through; }
+.ast-box.t-done    { border-color: #21262d; background: #0d1117; color: #484f58; }
+.ast-box.t-result  { border-color: #8957e5; background: #1b1327; color: #d2a8ff; font-weight: 700; }
+.ast-idx { font-size: 0.62rem; color: #484f58; }
+.action-row { margin: 8px 0 12px; }
+.action-badge { display: inline-flex; align-items: center; gap: 8px; padding: 5px 16px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; }
+.act-push    { background: #0d2b0d; color: #56d364; border: 1px solid #238636; }
+.act-pop     { background: #2d1317; color: #da3633; border: 1px solid #da3633; }
+.act-skip    { background: #2d1a00; color: #ffa657; border: 1px solid #ffa657; }
+.act-mutual  { background: #2d1317; color: #da3633; border: 1px dashed #da3633; }
+.act-result  { background: #1b1327; color: #d2a8ff; border: 1px solid #8957e5; }
+.act-none    { background: #161b22; color: #8b949e; border: 1px solid #30363d; }
+.collision-callout { background: #2d1a00; border: 1px solid #ffa657; border-radius: 8px; padding: 10px 14px; margin: 8px 0 12px; font-size: 0.8rem; }
+.collision-title { color: #ffa657; font-weight: 700; margin-bottom: 4px; }
+.collision-body  { color: #8b949e; }
+.stack-label { font-size: 0.72rem; color: #6e7681; margin-bottom: 8px; }
+.stack-container { display: flex; flex-direction: column; gap: 6px; min-height: 28px; margin-bottom: 14px; }
+.stack-empty { font-size: 0.82rem; color: #484f58; font-style: italic; }
+.stack-item { padding: 7px 14px; border: 1px solid #30363d; border-radius: 6px; font-size: 0.88rem; background: #161b22; color: #c9d1d9; display: flex; align-items: center; justify-content: space-between; }
+.stack-item.t-push { border-color: #238636; background: #12261e; color: #56d364; box-shadow: 0 0 8px #23863640; }
+.stack-item.t-pop  { border-color: #da3633; background: #2d1317; color: #da3633; text-decoration: line-through; opacity: 0.7; }
+.stack-tag { font-size: 0.63rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; margin-left: 8px; }
+.tag-push { background: #238636; color: #fff; }
+.tag-pop  { background: #da3633; color: #fff; }
+.tag-top  { background: #1f6feb; color: #fff; }
+.changes-panel { border: 1px solid #30363d; border-radius: 8px; padding: 12px 16px; margin-top: 10px; background: #0d1117; }
+.changes-title { font-size: 0.7rem; color: #8b949e; font-weight: 600; margin-bottom: 8px; letter-spacing: 0.05em; }
+.no-change { font-size: 0.8rem; color: #484f58; font-style: italic; }
+.change-row { border-left: 3px solid #ffa657; padding-left: 10px; margin-bottom: 10px; }
+.change-row:last-child { margin-bottom: 0; }
+.change-code { font-size: 0.82rem; color: #ffa657; font-weight: 700; margin-bottom: 3px; }
+.change-was  { font-size: 0.77rem; color: #8b949e; }
+.change-was span { text-decoration: line-through; color: #da3633; }
+.change-now  { font-size: 0.77rem; color: #8b949e; }
+.change-now span { color: #56d364; font-weight: 700; }
+.change-why  { font-size: 0.77rem; color: #6e7681; margin-top: 3px; font-style: italic; }
+.result-box { margin-top: 12px; padding: 12px 18px; background: #1b1327; border: 2px solid #8957e5; border-radius: 8px; text-align: center; color: #d2a8ff; font-size: 1rem; font-weight: 700; }
+.legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #21262d; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.7rem; color: #8b949e; }
+.leg-dot { width: 13px; height: 13px; border-radius: 3px; flex-shrink: 0; }
+.code-block { background: #0d1117; border: 1px solid #21262d; border-radius: 8px; padding: 14px; font-size: 0.83rem; line-height: 1.85; overflow-x: auto; margin-bottom: 14px; }
+.code-line { display: block; padding: 1px 6px; border-radius: 4px; }
+.code-line.active { background: #1f2d1f; border-left: 3px solid #56d364; margin-left: -6px; padding-left: 3px; }
+.kw { color: #ff7b72; } .fn { color: #d2a8ff; } .cm { color: #8b949e; font-style: italic; } .nu { color: #79c0ff; } .var { color: #e6edf3; }
+.vars-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; margin-bottom: 14px; }
+.var-cell { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 8px 12px; }
+.var-name { font-size: 0.67rem; color: #6e7681; margin-bottom: 2px; }
+.var-val  { font-size: 0.82rem; color: #e6edf3; font-weight: 600; word-break: break-all; }
+footer { border-top: 1px solid #30363d; padding: 10px 28px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+.btn { background: #21262d; border: 1px solid #30363d; color: #c9d1d9; padding: 6px 20px; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 0.85rem; }
+.btn:hover:not(:disabled) { background: #30363d; }
+.btn:disabled { opacity: 0.35; cursor: default; }
+#explain { flex: 1; font-size: 0.82rem; color: #8b949e; line-height: 1.5; }
+#step-counter { font-size: 0.78rem; color: #6e7681; white-space: nowrap; }
+.key-hint { text-align: center; font-size: 0.67rem; color: #484f58; padding: 4px; border-top: 1px solid #21262d; flex-shrink: 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>LC 735 — Asteroid Collision</h1>
+  <span class="badge medium">Medium</span>
+  <span class="badge time-badge">Time O(n)</span>
+  <span class="badge space-badge">Space O(n)</span>
+</header>
+<div id="progress"><div id="progress-bar"></div></div>
+<main>
+  <div class="panel">
+    <div id="phase-pill" class="phase-pill"></div>
+    <div id="viz-content"></div>
+  </div>
+  <div class="panel">
+    <div class="code-block">
+      <span class="code-line" data-ln="1"><span class="kw">def</span> <span class="fn">asteroidCollision</span>(<span class="var">self</span>, <span class="var">asteroids</span>):</span>
+      <span class="code-line" data-ln="2">    <span class="var">stack</span> = []</span>
+      <span class="code-line" data-ln="3">    <span class="kw">for</span> <span class="var">a</span> <span class="kw">in</span> <span class="var">asteroids</span>:</span>
+      <span class="code-line" data-ln="4">        <span class="var">alive</span> = <span class="kw">True</span></span>
+      <span class="code-line" data-ln="5">        <span class="kw">while</span> <span class="var">alive</span> <span class="kw">and</span> <span class="var">stack</span> <span class="kw">and</span> <span class="var">a</span> &lt; <span class="nu">0</span> &lt; <span class="var">stack</span>[-<span class="nu">1</span>]:</span>
+      <span class="code-line" data-ln="6">            <span class="kw">if</span> <span class="var">stack</span>[-<span class="nu">1</span>] &lt; -<span class="var">a</span>:   <span class="cm"># top smaller → top destroyed</span></span>
+      <span class="code-line" data-ln="7">                <span class="var">stack</span>.<span class="fn">pop</span>()</span>
+      <span class="code-line" data-ln="8">            <span class="kw">elif</span> <span class="var">stack</span>[-<span class="nu">1</span>] == -<span class="var">a</span>: <span class="cm"># equal → both destroyed</span></span>
+      <span class="code-line" data-ln="9">                <span class="var">stack</span>.<span class="fn">pop</span>(); <span class="var">alive</span> = <span class="kw">False</span></span>
+      <span class="code-line" data-ln="10">            <span class="kw">else</span>:               <span class="cm"># top larger → current destroyed</span></span>
+      <span class="code-line" data-ln="11">                <span class="var">alive</span> = <span class="kw">False</span></span>
+      <span class="code-line" data-ln="12">        <span class="kw">if</span> <span class="var">alive</span>:</span>
+      <span class="code-line" data-ln="13">            <span class="var">stack</span>.<span class="fn">append</span>(<span class="var">a</span>)</span>
+      <span class="code-line" data-ln="14">    <span class="kw">return</span> <span class="var">stack</span></span>
+    </div>
+    <div class="vars-grid" id="vars-grid"></div>
+  </div>
+</main>
+<footer>
+  <button class="btn" id="btn-prev" onclick="go(-1)">← Prev</button>
+  <div id="explain"></div>
+  <span id="step-counter"></span>
+  <button class="btn" id="btn-next" onclick="go(1)">Next →</button>
+</footer>
+<div class="key-hint">keyboard: ← → arrow keys</div>
+<script>
+// asteroids = [5, 10, -5, -10, -20, 7]
+// +n moves RIGHT, -n moves LEFT; collision only when right meets left (pos top, neg incoming)
+// result = [-20, 7]
+
+const ASTEROIDS = [5, 10, -5, -10, -20, 7];
+
+const STEPS = [
+  {
+    phase: 'Step 1 — Problem Setup  (line 1)',
+    ln: 1,
+    asts: ASTEROIDS.map(v => ({ v, cls: 'normal' })),
+    stack: [], action: 'none', actionLabel: '', collision: null,
+    changes: [],
+    vars: { a: '—', alive: '—', stack: '[]' },
+    explain: 'Asteroids move through space. Positive = right (→), negative = left (←). Collision only happens when a right-moving asteroid is directly left of a left-moving one. Larger size wins; equal sizes both explode. The stack holds surviving right-moving asteroids. Input: [5, 10, −5, −10, −20, 7].'
+  },
+  {
+    phase: 'Step 2 — a=5 (→): positive, push  (line 13)',
+    ln: 13,
+    asts: ASTEROIDS.map((v,i) => ({ v, cls: i===0?'curr-pos': 'normal' })),
+    stack: [{ v:5, cls:'push' }], action: 'push', actionLabel: 'stack.append(5)  →  [5]', collision: null,
+    changes: [{ code:'stack.append(5)', was:'stack  →  []', now:'stack  →  [5]', why:'Positive asteroid moves right. alive=True, while condition: a < 0? No (5 > 0). Skip while. Push 5 onto stack.' }],
+    vars: { a:'5', alive:'True', stack:'[5]' },
+    explain: 'a=5 is positive (→). The while condition requires a < 0, so it is skipped entirely. alive stays True. Push 5 onto the stack.'
+  },
+  {
+    phase: 'Step 3 — a=10 (→): positive, push  (line 13)',
+    ln: 13,
+    asts: ASTEROIDS.map((v,i) => ({ v, cls: i===1?'curr-pos': i===0?'pos':'normal' })),
+    stack: [{ v:5, cls:'normal' }, { v:10, cls:'push' }], action: 'push', actionLabel: 'stack.append(10)  →  [5, 10]', collision: null,
+    changes: [{ code:'stack.append(10)', was:'stack  →  [5]', now:'stack  →  [5, 10]', why:'Positive — no collision possible (both going right). Push 10.' }],
+    vars: { a:'10', alive:'True', stack:'[5, 10]' },
+    explain: 'a=10 is positive. Two right-moving asteroids never collide. Push 10. Stack = [5, 10].'
+  },
+  {
+    phase: 'Step 4 — a=−5 (←): collision! 10 > 5 → −5 destroyed  (lines 5,10–11)',
+    ln: 11,
+    asts: ASTEROIDS.map((v,i) => ({ v, cls: i===2?'curr-neg': i<2?'done':'normal' })),
+    stack: [{ v:5, cls:'normal' }, { v:10, cls:'normal' }],
+    action: 'skip', actionLabel: '10 > |−5| → current asteroid −5 destroyed (alive=False)', collision: { title:'Collision: −5 hits 10', body:'|−5|=5 < 10. The stack top (10) is larger. −5 is destroyed. alive=False ends the while loop. Stack is unchanged.' },
+    changes: [{ code:'alive = False', was:'alive  →  True', now:'alive  →  False', why:'stack[-1]=10 > |-a|=5 (else branch). The right-moving 10 survives. −5 is annihilated. alive=False exits the while loop and skips the append.' }],
+    vars: { a:'−5', alive:'False', 'stack[-1]':'10', stack:'[5, 10]' },
+    explain: 'OPERATION ↷: a=−5, stack top=10. We check: is 10 < 5? No. Is 10 == 5? No. Else: 10 > 5, so −5 is destroyed. alive=False. The while exits and "if alive" is False — no push. Stack unchanged [5,10].'
+  },
+  {
+    phase: 'Step 5 — a=−10 (←): collision! 10 == 10 → both destroyed  (lines 5,8–9)',
+    ln: 9,
+    asts: ASTEROIDS.map((v,i) => ({ v, cls: i===3?'curr-neg': i<3?'done':'normal' })),
+    stack: [{ v:5, cls:'normal' }],
+    action: 'mutual', actionLabel: '10 == |−10| → MUTUAL DESTRUCTION (both pop)', collision: { title:'Collision: −10 hits 10', body:'|−10|=10 == stack top 10. Equal size — both destroyed. Pop 10 from stack. Set alive=False so −10 is not pushed either.' },
+    changes: [{ code:'stack.pop(); alive = False', was:'stack  →  [5, 10]', now:'stack  →  [5]', why:'stack[-1]=10 equals |-a|=10 (equal branch). Both asteroids annihilate. Pop 10, set alive=False. Neither survives.' }],
+    vars: { a:'−10', alive:'False', 'stack[-1] (popped)':'10', stack:'[5]' },
+    explain: 'OPERATION ↷: a=−10, stack top=10. Equal sizes — mutual destruction. Pop 10 from stack AND set alive=False so −10 is not pushed. Stack shrinks to [5].'
+  },
+  {
+    phase: 'Step 6 — a=−20 (←): collision! 5 < 20 → pop 5  (lines 5–7)',
+    ln: 7,
+    asts: ASTEROIDS.map((v,i) => ({ v, cls: i===4?'curr-neg': i<4?'done':'normal' })),
+    stack: [],
+    action: 'pop', actionLabel: '5 < |−20| → pop 5 (destroyed)', collision: { title:'Collision: −20 hits 5', body:'|−20|=20 > 5. The incoming −20 is larger. Pop 5. Stack is now empty. The while loop checks again — stack is empty, so it exits. Since alive=True, push −20.' },
+    changes: [{ code:'stack.pop()', was:'stack  →  [5]', now:'stack  →  []', why:'stack[-1]=5 < |-a|=20 (first branch). Pop 5. While loop continues — but stack is now empty, so condition fails and loop exits.' }],
+    vars: { a:'−20', alive:'True', 'stack[-1] (popped)':'5', stack:'[]' },
+    explain: 'OPERATION ↷: a=−20, stack top=5. 5 < 20, so pop 5. Stack empties. While exits (stack empty). alive is still True — no one stopped −20. Push −20 next step.'
+  },
+  {
+    phase: 'Step 7 — push −20  (line 13)',
+    ln: 13,
+    asts: ASTEROIDS.map((v,i) => ({ v, cls: i===4?'curr-neg': i<4?'done':'normal' })),
+    stack: [{ v:-20, cls:'push' }], action: 'push', actionLabel: 'stack.append(−20)  →  [−20]', collision: null,
+    changes: [{ code:'stack.append(−20)', was:'stack  →  []', now:'stack  →  [−20]', why:'Stack is empty — −20 has no right-moving asteroid to collide with. alive=True, so push −20. Negative asteroids can sit in the stack when there is nothing to the left.' }],
+    vars: { a:'−20', alive:'True', stack:'[−20]' },
+    explain: 'Stack emptied. −20 survives and is pushed. A negative asteroid can live in the stack — it only collides with a positive (right-moving) asteroid to its left, and there are none remaining.'
+  },
+  {
+    phase: 'Step 8 — a=7 (→): no collision (top is −20, same direction impossible)  (line 13)',
+    ln: 13,
+    asts: ASTEROIDS.map((v,i) => ({ v, cls: i===5?'curr-pos': i<5?'done':'normal' })),
+    stack: [{ v:-20, cls:'normal' }, { v:7, cls:'push' }], action: 'push', actionLabel: 'stack.append(7)  →  [−20, 7]', collision: null,
+    changes: [{ code:'stack.append(7)', was:'stack  →  [−20]', now:'stack  →  [−20, 7]', why:'While condition: a < 0 < stack[-1] requires both a to be negative AND stack top to be positive. Here a=7 (positive), so while is skipped. No collision possible.' }],
+    vars: { a:'7', alive:'True', stack:'[−20, 7]' },
+    explain: 'a=7 is positive. While condition requires a < 0 — false immediately. alive=True. Push 7. A right-moving asteroid behind a left-moving one will never catch it (they move apart). Stack = [−20, 7].'
+  },
+  {
+    phase: 'Step 9 — Result  (line 14)',
+    ln: 14,
+    asts: ASTEROIDS.map(v => ({ v, cls: 'result' })),
+    stack: [{ v:-20, cls:'normal' }, { v:7, cls:'normal' }], action: 'result', actionLabel: 'return stack', collision: null,
+    changes: [],
+    vars: { stack:'[−20, 7]', result:'[−20, 7]' },
+    explain: 'Loop ends. Return the stack as the final state. Result: [−20, 7]. The stack IS the answer — it contains all surviving asteroids in their original relative order. Time O(n): each asteroid pushed and popped at most once. Space O(n): stack up to size n.'
+  }
+];
+
+let cur = 0;
+
+function astCls(c) {
+  return { 'curr-pos':'t-curr-pos','curr-neg':'t-curr-neg','pos':'t-pos','neg':'t-neg','dead':'t-dead','done':'t-done','result':'t-result','normal':'' }[c]||'';
+}
+
+function render() {
+  const s = STEPS[cur];
+  document.getElementById('phase-pill').textContent = s.phase;
+  let html = '';
+
+  html += `<div class="arr-label">asteroids[] — (+) moves right →, (−) moves left ←</div><div class="arr-strip">`;
+  s.asts.forEach((a,i) => {
+    const cls = astCls(a.cls);
+    const dir = a.v > 0 ? ' →' : ' ←';
+    html += `<div class="ast-cell"><div class="ast-box ${cls}">${a.v}${dir}</div><div class="ast-idx">[${i}]</div></div>`;
+  });
+  html += '</div>';
+
+  if (s.action !== 'none') {
+    const cls = {push:'act-push',pop:'act-pop',skip:'act-skip',mutual:'act-mutual',result:'act-result'}[s.action]||'act-none';
+    const icon = {push:'↑',pop:'↓',skip:'💥',mutual:'💥💥',result:'✓'}[s.action]||'';
+    html += `<div class="action-row"><span class="action-badge ${cls}">${icon}&nbsp;&nbsp;${s.actionLabel}</span></div>`;
+  }
+
+  if (s.collision) {
+    html += `<div class="collision-callout"><div class="collision-title">⚡ ${s.collision.title}</div><div class="collision-body">${s.collision.body}</div></div>`;
+  }
+
+  html += `<div class="stack-label">Stack — surviving asteroids (top → bottom)</div><div class="stack-container">`;
+  if (s.stack.length === 0) {
+    html += '<span class="stack-empty">[ empty ]</span>';
+  } else {
+    for (let i = s.stack.length-1; i >= 0; i--) {
+      const item = s.stack[i];
+      const isTop = i === s.stack.length-1;
+      const cls = item.cls==='push'?'t-push': item.cls==='pop'?'t-pop':'';
+      const dir = item.v > 0 ? ' →' : ' ←';
+      const tag = item.cls==='push' ? '<span class="stack-tag tag-push">just pushed</span>'
+                : isTop ? '<span class="stack-tag tag-top">top</span>' : '';
+      html += `<div class="stack-item ${cls}">${item.v}${dir}${tag}</div>`;
+    }
+  }
+  html += '</div>';
+
+  if (s.action === 'result') {
+    html += `<div class="result-box">✓ &nbsp; Result: [−20, 7]</div>`;
+  }
+
+  if (!s.changes || s.changes.length === 0) {
+    html += `<div class="changes-panel"><div class="changes-title">↷ STACK OPERATIONS THIS STEP</div><div class="no-change">No stack mutation this step.</div></div>`;
+  } else {
+    const rows = s.changes.map(c => `<div class="change-row">
+      <div class="change-code">${c.code}</div>
+      <div class="change-was">was: <span>${c.was}</span></div>
+      <div class="change-now">now: <span>${c.now}</span></div>
+      <div class="change-why">${c.why}</div>
+    </div>`).join('');
+    html += `<div class="changes-panel"><div class="changes-title">↷ STACK OPERATION THIS STEP</div>${rows}</div>`;
+  }
+
+  html += `<div class="legend">
+    <div class="legend-item"><div class="leg-dot" style="background:#12261e;border:1px solid #56d364"></div>Current (+)</div>
+    <div class="legend-item"><div class="leg-dot" style="background:#2d1317;border:1px solid #da3633"></div>Current (−)</div>
+    <div class="legend-item"><div class="leg-dot" style="background:#0d1117;border:1px solid #21262d"></div>Processed/dead</div>
+    <div class="legend-item"><div class="leg-dot" style="background:#1b1327;border:1px solid #8957e5"></div>Survivor</div>
+  </div>`;
+
+  document.getElementById('viz-content').innerHTML = html;
+  document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active'));
+  const active = document.querySelector(`.code-line[data-ln="${s.ln}"]`);
+  if (active) active.classList.add('active');
+  document.getElementById('vars-grid').innerHTML = Object.entries(s.vars).map(([k,v]) =>
+    `<div class="var-cell"><div class="var-name">${k}</div><div class="var-val">${v}</div></div>`).join('');
+  document.getElementById('explain').textContent = s.explain;
+  document.getElementById('step-counter').textContent = `${cur+1} / ${STEPS.length}`;
+  document.getElementById('progress-bar').style.width = ((cur+1)/STEPS.length*100)+'%';
+  document.getElementById('btn-prev').disabled = cur===0;
+  document.getElementById('btn-next').disabled = cur===STEPS.length-1;
+}
+
+function go(dir) {
+  const next = cur+dir;
+  if (next>=0 && next<STEPS.length) { cur=next; render(); }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key==='ArrowRight'||e.key==='ArrowDown') go(1);
+  if (e.key==='ArrowLeft' ||e.key==='ArrowUp')   go(-1);
+});
+
+render();
+</script>
+</body>
+</html>

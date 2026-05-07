@@ -18,8 +18,18 @@ header h1 { font-size: 1.15rem; color: #e6edf3; }
 #progress { height: 3px; background: #21262d; flex-shrink: 0; }
 #progress-bar { height: 3px; background: #58a6ff; transition: width 0.25s; }
 
-main { display: grid; grid-template-columns: 1fr 1fr; flex: 1; min-height: 0; }
+/* Tab bar */
+#tab-bar { display: flex; background: #0d1117; border-bottom: 1px solid #30363d; padding: 0 20px; flex-shrink: 0; overflow-x: auto; }
+.tab { background: none; border: none; border-bottom: 2px solid transparent; color: #8b949e; padding: 10px 18px; cursor: pointer; font-family: inherit; font-size: 0.78rem; white-space: nowrap; transition: color 0.15s, border-color 0.15s; }
+.tab:hover { color: #c9d1d9; }
+.tab.active { color: #58a6ff; border-bottom-color: #58a6ff; font-weight: 600; }
+.tab-label { font-size: 0.68rem; color: #484f58; margin-right: 6px; }
+.tab.active .tab-label { color: #6e7681; }
+.tab-edge { font-size: 0.65rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; margin-left: 6px; vertical-align: middle; }
+.edge-root  { background: #2d1317; color: #da3633; }
+.edge-slash { background: #0c1f3d; color: #58a6ff; }
 
+main { display: grid; grid-template-columns: 1fr 1fr; flex: 1; min-height: 0; }
 .panel { border-right: 1px solid #30363d; padding: 18px 22px; overflow-y: auto; }
 .panel:last-child { border-right: none; }
 
@@ -31,7 +41,7 @@ main { display: grid; grid-template-columns: 1fr 1fr; flex: 1; min-height: 0; }
 .tok { padding: 5px 11px; border: 1px solid #30363d; border-radius: 6px; font-size: 0.85rem; background: #161b22; color: #8b949e; transition: all 0.15s; }
 .tok.t-curr  { border-color: #238636; background: #12261e; color: #56d364; font-weight: 700; }
 .tok.t-done  { border-color: #21262d; background: #0d1117; color: #484f58; text-decoration: line-through; }
-.tok.t-skip  { border-color: #ffa657; background: #2d1a00; color: #ffa657; }
+.tok.t-curr-special { border-color: #da3633; background: #2d1317; color: #da3633; font-weight: 700; }
 
 /* Action badge */
 .action-row { margin: 10px 0 12px; }
@@ -39,6 +49,7 @@ main { display: grid; grid-template-columns: 1fr 1fr; flex: 1; min-height: 0; }
 .act-push   { background: #0d2b0d; color: #56d364; border: 1px solid #238636; }
 .act-pop    { background: #2d1317; color: #da3633; border: 1px solid #da3633; }
 .act-skip   { background: #2d1a00; color: #ffa657; border: 1px solid #ffa657; }
+.act-noop   { background: #2d1317; color: #da3633; border: 1px dashed #da3633; }
 .act-result { background: #1b1327; color: #d2a8ff; border: 1px solid #8957e5; }
 .act-none   { background: #161b22; color: #8b949e; border: 1px solid #30363d; }
 
@@ -51,9 +62,14 @@ main { display: grid; grid-template-columns: 1fr 1fr; flex: 1; min-height: 0; }
 .stack-item.t-push { border-color: #238636; background: #12261e; color: #56d364; box-shadow: 0 0 8px #23863640; }
 .stack-item.t-pop  { border-color: #da3633; background: #2d1317; color: #da3633; text-decoration: line-through; opacity: 0.7; }
 .stack-tag { font-size: 0.65rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; margin-left: 8px; }
-.tag-push   { background: #238636; color: #fff; }
-.tag-pop    { background: #da3633; color: #fff; }
-.tag-top    { background: #1f6feb; color: #fff; }
+.tag-push { background: #238636; color: #fff; }
+.tag-pop  { background: #da3633; color: #fff; }
+.tag-top  { background: #1f6feb; color: #fff; }
+
+/* Noop-pop callout (edge case 2 step 5) */
+.noop-callout { background: #2d1317; border: 1px solid #da3633; border-radius: 8px; padding: 10px 14px; margin: 8px 0; font-size: 0.8rem; }
+.noop-callout .noop-title { color: #da3633; font-weight: 700; margin-bottom: 4px; }
+.noop-callout .noop-body  { color: #8b949e; }
 
 /* Result box */
 .result-box { margin-top: 14px; padding: 14px 20px; background: #1b1327; border: 2px solid #8957e5; border-radius: 8px; text-align: center; color: #d2a8ff; font-size: 1.1rem; font-weight: 700; }
@@ -112,6 +128,18 @@ footer { border-top: 1px solid #30363d; padding: 10px 28px; display: flex; flex-
 </header>
 <div id="progress"><div id="progress-bar"></div></div>
 
+<div id="tab-bar">
+  <button class="tab active" onclick="switchTab(0)">
+    Ex 1: &nbsp;<code>/a/./b/../../c/</code>
+  </button>
+  <button class="tab" onclick="switchTab(1)">
+    Ex 2: &nbsp;<code>/../</code>&nbsp;<span class="tab-edge edge-root">above root</span>
+  </button>
+  <button class="tab" onclick="switchTab(2)">
+    Ex 3: &nbsp;<code>/home//foo/</code>&nbsp;<span class="tab-edge edge-slash">double slash</span>
+  </button>
+</div>
+
 <main>
   <div class="panel" id="viz-panel">
     <div id="phase-pill" class="phase-pill"></div>
@@ -145,188 +173,269 @@ footer { border-top: 1px solid #30363d; padding: 10px 28px; display: flex; flex-
 </footer>
 
 <script>
-// Input: /a/./b/../../c/  →  /c
-const PATH = '/a/./b/../../c/';
-const DISPLAY_TOKENS = ['""', '"a"', '"."', '"b"', '".."', '".."', '"c"', '""'];
+const EXAMPLES = [
 
-const STEPS = [
-  {
-    phase: 'Step 1 — Problem setup  (line 1)',
-    ln: 1,
-    tokIdx: -1,
-    stack: [],
-    action: 'none',
-    changes: [],
-    vars: { path: PATH, stack: '[]', token: '—' },
-    explain: 'Goal: given the Unix path "' + PATH + '", return its canonical (simplified) form. No "..", no ".", no double slashes, no trailing slash. The key insight: a stack naturally mirrors how a directory tree works — push to go deeper, pop to go up.'
-  },
-  {
-    phase: 'Step 2 — Initialize stack  (line 2)',
-    ln: 2,
-    tokIdx: -1,
-    stack: [],
-    action: 'none',
-    changes: [],
-    vars: { path: PATH, stack: '[]', token: '—' },
-    explain: 'stack = []. This stack will hold only real directory names — no dots, no empty strings. At the end, joining stack with "/" and prepending "/" gives the answer.'
-  },
-  {
-    phase: 'Step 3 — Split path by "/"  (line 3)',
-    ln: 3,
-    tokIdx: -1,
-    stack: [],
-    action: 'none',
-    changes: [],
-    vars: { path: PATH, stack: '[]', token: '—' },
-    explain: 'path.split("/") → ["", "a", ".", "b", "..", "..", "c", ""]. The leading "/" produces an empty string at index 0; the trailing "/" produces one at index 7. Every "//" would also produce an empty string — that is why skipping empty tokens handles multiple slashes automatically.'
-  },
-  {
-    phase: 'Step 4 — token = "" → SKIP  (line 7)',
-    ln: 7,
-    tokIdx: 0,
-    stack: [],
-    action: 'skip',
-    actionLabel: 'SKIP — empty string (from leading "/")',
-    changes: [],
-    vars: { path: PATH, stack: '[]', token: '""' },
-    explain: 'token = "" (empty). The condition "elif token and ..." short-circuits on the first part: empty string is falsy in Python, so we skip without even checking the "!= \'.\'\" part. Stack unchanged: [].'
-  },
-  {
-    phase: 'Step 5 — token = "a" → PUSH  (line 8)',
-    ln: 8,
-    tokIdx: 1,
-    stack: ['a'],
-    action: 'push',
-    actionLabel: 'PUSH "a"',
-    changes: [
-      {
-        code: 'stack.append(token)',
-        was:  'stack  →  []',
-        now:  'stack  →  ["a"]',
-        why:  '"a" is a real directory name — not empty, not ".", not "..". Push it. The stack now represents: we are inside /a/.'
-      }
-    ],
-    vars: { path: PATH, stack: '["a"]', token: '"a"' },
-    explain: 'ARROW CHANGED ↷: token = "a". Passes both checks (truthy AND not "."), so stack.append("a"). Stack = ["a"]. Think of the stack as a breadcrumb trail from root: every item is one level deeper.'
-  },
-  {
-    phase: 'Step 6 — token = "." → SKIP  (line 7)',
-    ln: 7,
-    tokIdx: 2,
-    stack: ['a'],
-    action: 'skip',
-    actionLabel: 'SKIP — "." means current directory',
-    changes: [],
-    vars: { path: PATH, stack: '["a"]', token: '"."' },
-    explain: 'token = ".". It passes the "truthy" check (non-empty), but fails "token != \'.\'" — so we skip. A single dot means "stay where you are". Stack unchanged: ["a"]. We are still inside /a/.'
-  },
-  {
-    phase: 'Step 7 — token = "b" → PUSH  (line 8)',
-    ln: 8,
-    tokIdx: 3,
-    stack: ['a', 'b'],
-    action: 'push',
-    actionLabel: 'PUSH "b"',
-    changes: [
-      {
-        code: 'stack.append(token)',
-        was:  'stack  →  ["a"]',
-        now:  'stack  →  ["a", "b"]',
-        why:  '"b" is a real directory. Now we are two levels deep: /a/b/. The stack top always tells you where you are right now.'
-      }
-    ],
-    vars: { path: PATH, stack: '["a", "b"]', token: '"b"' },
-    explain: 'ARROW CHANGED ↷: token = "b". stack.append("b") → stack = ["a", "b"]. Current location: /a/b/. The top of the stack ("b") is our current directory.'
-  },
-  {
-    phase: 'Step 8 — token = ".." → POP  (lines 4–6)',
-    ln: 6,
-    tokIdx: 4,
-    stack: ['a'],
-    poppedVal: 'b',
-    action: 'pop',
-    actionLabel: 'POP "b" — go up one level',
-    changes: [
-      {
-        code: 'stack.pop()',
-        was:  'stack  →  ["a", "b"]',
-        now:  'stack  →  ["a"]',
-        why:  '".." means "go up one directory". Popping the stack top removes the deepest directory. We are now back in /a/. The "if stack:" guard ensures we never pop an empty stack — at the filesystem root, ".." is a no-op.'
-      }
-    ],
-    vars: { path: PATH, stack: '["a"]', token: '".."' },
-    explain: 'ARROW CHANGED ↷: token = "..". "if stack:" is True (stack is not empty), so stack.pop() removes "b". Stack = ["a"]. We went up from /a/b/ → /a/. The stack literally undoes the last push.'
-  },
-  {
-    phase: 'Step 9 — token = ".." → POP  (lines 4–6)',
-    ln: 6,
-    tokIdx: 5,
-    stack: [],
-    poppedVal: 'a',
-    action: 'pop',
-    actionLabel: 'POP "a" — back to root',
-    changes: [
-      {
-        code: 'stack.pop()',
-        was:  'stack  →  ["a"]',
-        now:  'stack  →  []',
-        why:  'Another "..". Pop "a". Stack is now empty — we are at the filesystem root /. If the path had another ".." here, "if stack:" would be False and we would skip the pop — you cannot go above root.'
-      }
-    ],
-    vars: { path: PATH, stack: '[]', token: '".."' },
-    explain: 'ARROW CHANGED ↷: Another "..". stack.pop() removes "a". Stack = []. We are at root /. Key rule: "../.." from /a/b/ lands at /, not somewhere undefined. The empty-stack guard makes this safe automatically.'
-  },
-  {
-    phase: 'Step 10 — token = "c" → PUSH  (line 8)',
-    ln: 8,
-    tokIdx: 6,
-    stack: ['c'],
-    action: 'push',
-    actionLabel: 'PUSH "c"',
-    changes: [
-      {
-        code: 'stack.append(token)',
-        was:  'stack  →  []',
-        now:  'stack  →  ["c"]',
-        why:  '"c" is a real directory. After navigating all the way back to root, we are now in /c/. The entire "/a/./b/../../" portion collapsed to nothing — this is exactly what the stack is for.'
-      }
-    ],
-    vars: { path: PATH, stack: '["c"]', token: '"c"' },
-    explain: 'ARROW CHANGED ↷: token = "c". stack.append("c") → stack = ["c"]. All of /a/./b/../.. resolved to nothing; now we descend into /c/. The stack at this point is the exact simplified path.'
-  },
-  {
-    phase: 'Step 11 — token = "" → SKIP  (line 7)',
-    ln: 7,
-    tokIdx: 7,
-    stack: ['c'],
-    action: 'skip',
-    actionLabel: 'SKIP — empty string (from trailing "/")',
-    changes: [],
-    vars: { path: PATH, stack: '["c"]', token: '""' },
-    explain: 'token = "" (from the trailing "/" in the input). Falsy → skip. The for loop is now done. Stack = ["c"]. This is why the algorithm strips trailing slashes automatically — empty strings from split just get skipped.'
-  },
-  {
-    phase: 'Step 12 — Build result  (line 9)',
-    ln: 9,
-    tokIdx: -1,
-    stack: ['c'],
-    action: 'result',
-    actionLabel: 'RESULT: "/c"',
-    changes: [],
-    vars: { path: PATH, stack: '["c"]', token: '—' },
-    explain: '"/" + "/".join(["c"]) = "/c". If the stack were empty (e.g. input was "/../"), "/".join([]) = "" so we return "/". This one-liner correctly handles both cases. Time O(n) — one pass over the tokens. Space O(n) — stack holds at most n/2 components.'
-  }
-];
+// ─── Example 1: /a/./b/../../c/ → /c ────────────────────────────────────────
+{
+  path: '/a/./b/../../c/',
+  result: '/c',
+  displayTokens: ['""', '"a"', '"."', '"b"', '".."', '".."', '"c"', '""'],
+  steps: [
+    {
+      phase: 'Step 1 — Problem setup  (line 1)',
+      ln: 1, tokIdx: -1, stack: [], action: 'none', changes: [],
+      vars: { path: '/a/./b/../../c/', stack: '[]', token: '—' },
+      explain: 'Goal: simplify "/a/./b/../../c/" → find the canonical form. No "..", no ".", no double slashes, no trailing slash. The key insight: a stack naturally mirrors how a directory tree works — push to go deeper, pop to go up.'
+    },
+    {
+      phase: 'Step 2 — Initialize stack  (line 2)',
+      ln: 2, tokIdx: -1, stack: [], action: 'none', changes: [],
+      vars: { path: '/a/./b/../../c/', stack: '[]', token: '—' },
+      explain: 'stack = []. This stack holds only real directory names — no dots, no empty strings. At the end, "/".join(stack) gives the answer.'
+    },
+    {
+      phase: 'Step 3 — Split path by "/"  (line 3)',
+      ln: 3, tokIdx: -1, stack: [], action: 'none', changes: [],
+      vars: { path: '/a/./b/../../c/', stack: '[]', token: '—' },
+      explain: 'path.split("/") → ["", "a", ".", "b", "..", "..", "c", ""]. The leading "/" produces an empty string at index 0; the trailing "/" produces one at index 7. Every "//" also produces an empty string — skipping empty tokens handles multiple slashes automatically.'
+    },
+    {
+      phase: 'Step 4 — token = "" → SKIP  (line 7)',
+      ln: 7, tokIdx: 0, stack: [], action: 'skip',
+      actionLabel: 'SKIP — empty string (from leading "/")',
+      changes: [],
+      vars: { path: '/a/./b/../../c/', stack: '[]', token: '""' },
+      explain: 'token = "" (empty). "elif token and ..." short-circuits: empty string is falsy in Python, so we skip immediately. Stack unchanged: [].'
+    },
+    {
+      phase: 'Step 5 — token = "a" → PUSH  (line 8)',
+      ln: 8, tokIdx: 1, stack: ['a'], action: 'push',
+      actionLabel: 'PUSH "a"',
+      changes: [{ code: 'stack.append(token)', was: 'stack  →  []', now: 'stack  →  ["a"]',
+        why: '"a" is a real directory — not empty, not ".", not "..". Push it. Stack represents: we are inside /a/.' }],
+      vars: { path: '/a/./b/../../c/', stack: '["a"]', token: '"a"' },
+      explain: 'ARROW CHANGED ↷: token = "a". Passes both checks (truthy AND not "."). stack.append("a") → ["a"]. The stack is a breadcrumb trail from root: every item is one level deeper.'
+    },
+    {
+      phase: 'Step 6 — token = "." → SKIP  (line 7)',
+      ln: 7, tokIdx: 2, stack: ['a'], action: 'skip',
+      actionLabel: 'SKIP — "." means current directory',
+      changes: [],
+      vars: { path: '/a/./b/../../c/', stack: '["a"]', token: '"."' },
+      explain: 'token = ".". Passes truthy check but fails "token != \'.\'" — skip. Single dot means "stay where you are". Stack unchanged: ["a"].'
+    },
+    {
+      phase: 'Step 7 — token = "b" → PUSH  (line 8)',
+      ln: 8, tokIdx: 3, stack: ['a', 'b'], action: 'push',
+      actionLabel: 'PUSH "b"',
+      changes: [{ code: 'stack.append(token)', was: 'stack  →  ["a"]', now: 'stack  →  ["a", "b"]',
+        why: '"b" is a real directory. Now two levels deep: /a/b/. Stack top always shows current location.' }],
+      vars: { path: '/a/./b/../../c/', stack: '["a", "b"]', token: '"b"' },
+      explain: 'ARROW CHANGED ↷: token = "b". stack = ["a", "b"]. Current location: /a/b/.'
+    },
+    {
+      phase: 'Step 8 — token = ".." → POP "b"  (lines 4–6)',
+      ln: 6, tokIdx: 4, stack: ['a'], poppedVal: 'b', action: 'pop',
+      actionLabel: 'POP "b" — go up one level',
+      changes: [{ code: 'stack.pop()', was: 'stack  →  ["a", "b"]', now: 'stack  →  ["a"]',
+        why: '".." means "go up". Pop removes the deepest directory. Back in /a/. "if stack:" guard ensures we never pop an empty stack.' }],
+      vars: { path: '/a/./b/../../c/', stack: '["a"]', token: '".."' },
+      explain: 'ARROW CHANGED ↷: token = "..". stack is not empty → stack.pop() removes "b". Stack = ["a"]. Went up from /a/b/ → /a/.'
+    },
+    {
+      phase: 'Step 9 — token = ".." → POP "a"  (lines 4–6)',
+      ln: 6, tokIdx: 5, stack: [], poppedVal: 'a', action: 'pop',
+      actionLabel: 'POP "a" — back to root',
+      changes: [{ code: 'stack.pop()', was: 'stack  →  ["a"]', now: 'stack  →  []',
+        why: 'Another "..". Pop "a". Stack empty — at root /. If another ".." appeared here, "if stack:" would be False and we\'d skip the pop — you cannot go above root.' }],
+      vars: { path: '/a/./b/../../c/', stack: '[]', token: '".."' },
+      explain: 'ARROW CHANGED ↷: Another "..". stack.pop() removes "a". Stack = []. At root /. The "../.." from /a/b/ lands at /, not somewhere undefined.'
+    },
+    {
+      phase: 'Step 10 — token = "c" → PUSH  (line 8)',
+      ln: 8, tokIdx: 6, stack: ['c'], action: 'push',
+      actionLabel: 'PUSH "c"',
+      changes: [{ code: 'stack.append(token)', was: 'stack  →  []', now: 'stack  →  ["c"]',
+        why: '"c" is a real directory. The entire "/a/./b/../../" collapsed to nothing. Now in /c/.' }],
+      vars: { path: '/a/./b/../../c/', stack: '["c"]', token: '"c"' },
+      explain: 'ARROW CHANGED ↷: token = "c". stack = ["c"]. All of /a/./b/../.. resolved to nothing — we are now in /c/.'
+    },
+    {
+      phase: 'Step 11 — token = "" → SKIP  (line 7)',
+      ln: 7, tokIdx: 7, stack: ['c'], action: 'skip',
+      actionLabel: 'SKIP — empty string (from trailing "/")',
+      changes: [],
+      vars: { path: '/a/./b/../../c/', stack: '["c"]', token: '""' },
+      explain: 'token = "" (from trailing "/"). Falsy → skip. Loop done. Stack = ["c"].'
+    },
+    {
+      phase: 'Step 12 — Build result  (line 9)',
+      ln: 9, tokIdx: -1, stack: ['c'], action: 'result',
+      actionLabel: 'RESULT: "/c"',
+      changes: [],
+      vars: { path: '/a/./b/../../c/', stack: '["c"]', token: '—' },
+      explain: '"/" + "/".join(["c"]) = "/c". If stack were empty we\'d return "/". Time O(n), Space O(n).'
+    }
+  ]
+},
 
-let cur = 0;
+// ─── Example 2: /../ → /  (edge case: can't go above root) ──────────────────
+{
+  path: '/../',
+  result: '/',
+  displayTokens: ['""', '".."', '""'],
+  steps: [
+    {
+      phase: 'Step 1 — Problem setup  (line 1)',
+      ln: 1, tokIdx: -1, stack: [], action: 'none', changes: [],
+      vars: { path: '/../', stack: '[]', token: '—' },
+      explain: 'Edge case: "/../" — trying to go above the filesystem root. In Unix, ".." from / stays at /. The algorithm handles this automatically via the "if stack:" guard. We never need a special case. Expected result: "/".'
+    },
+    {
+      phase: 'Step 2 — Initialize stack  (line 2)',
+      ln: 2, tokIdx: -1, stack: [], action: 'none', changes: [],
+      vars: { path: '/../', stack: '[]', token: '—' },
+      explain: 'stack = []. Stack starts empty. Key question: when we see ".." with an empty stack, what happens?'
+    },
+    {
+      phase: 'Step 3 — Split path by "/"  (line 3)',
+      ln: 3, tokIdx: -1, stack: [], action: 'none', changes: [],
+      vars: { path: '/../', stack: '[]', token: '—' },
+      explain: '"/../".split("/") → ["", "..", ""]. Only 3 tokens: an empty string (from leading /), "..", and another empty string (from trailing /). Short path — short trace.'
+    },
+    {
+      phase: 'Step 4 — token = "" → SKIP  (line 7)',
+      ln: 7, tokIdx: 0, stack: [], action: 'skip',
+      actionLabel: 'SKIP — empty string (from leading "/")',
+      changes: [],
+      vars: { path: '/../', stack: '[]', token: '""' },
+      explain: 'token = "" (from the leading "/"). Falsy → skip. Stack still empty: [].'
+    },
+    {
+      phase: 'Step 5 — token = ".." but stack EMPTY → POP SKIPPED  (lines 4–5)',
+      ln: 5, tokIdx: 1, stack: [], action: 'noop',
+      actionLabel: '".." seen — but stack is empty, cannot go above root',
+      noopCallout: true,
+      changes: [],
+      vars: { path: '/../', stack: '[]', token: '".."' },
+      explain: 'KEY EDGE CASE: token = "..". We enter the "if token == \'..\'" branch (line 4). But then "if stack:" is evaluated — stack is [], which is FALSY. So we skip the pop entirely. Stack stays []. No crash, no special case — the guard handles root-above-root automatically.'
+    },
+    {
+      phase: 'Step 6 — token = "" → SKIP  (line 7)',
+      ln: 7, tokIdx: 2, stack: [], action: 'skip',
+      actionLabel: 'SKIP — empty string (from trailing "/")',
+      changes: [],
+      vars: { path: '/../', stack: '[]', token: '""' },
+      explain: 'token = "" (trailing "/"). Falsy → skip. Loop done. Stack = [].'
+    },
+    {
+      phase: 'Step 7 — Build result  (line 9)',
+      ln: 9, tokIdx: -1, stack: [], action: 'result',
+      actionLabel: 'RESULT: "/"',
+      changes: [],
+      vars: { path: '/../', stack: '[]', token: '—' },
+      explain: '"/" + "/".join([]) = "/" + "" = "/". An empty stack means we are at root. The return statement handles this without any if-else — "/".join([]) is just the empty string. Perfect edge case handling in one line.'
+    }
+  ]
+},
 
-function tokenStripH(s) {
+// ─── Example 3: /home//foo/ → /home/foo  (edge case: double slash) ───────────
+{
+  path: '/home//foo/',
+  result: '/home/foo',
+  displayTokens: ['""', '"home"', '"" ← //!', '"foo"', '""'],
+  steps: [
+    {
+      phase: 'Step 1 — Problem setup  (line 1)',
+      ln: 1, tokIdx: -1, stack: [], action: 'none', changes: [],
+      vars: { path: '/home//foo/', stack: '[]', token: '—' },
+      explain: 'Edge case: "/home//foo/" — a double slash in the middle. The expected result is "/home/foo" with a single slash. The algorithm handles this for free — no special case. Watch how "//" becomes an empty-string token that gets silently skipped.'
+    },
+    {
+      phase: 'Step 2 — Initialize stack  (line 2)',
+      ln: 2, tokIdx: -1, stack: [], action: 'none', changes: [],
+      vars: { path: '/home//foo/', stack: '[]', token: '—' },
+      explain: 'stack = []. The fix for double slashes will happen at the split step — not here.'
+    },
+    {
+      phase: 'Step 3 — Split reveals the double slash  (line 3)',
+      ln: 3, tokIdx: -1, stack: [], action: 'none', changes: [],
+      vars: { path: '/home//foo/', stack: '[]', token: '—' },
+      explain: '"/home//foo/".split("/") → ["", "home", "", "foo", ""]. The "//" at position 6–7 gets split into two pieces with an EMPTY STRING "" between them (token index 2). That empty string is the entire "problem" represented as data — and we already know how to skip empty strings.'
+    },
+    {
+      phase: 'Step 4 — token = "" → SKIP  (line 7)',
+      ln: 7, tokIdx: 0, stack: [], action: 'skip',
+      actionLabel: 'SKIP — empty string (from leading "/")',
+      changes: [],
+      vars: { path: '/home//foo/', stack: '[]', token: '""' },
+      explain: 'token = "" (from the leading "/"). Falsy → skip. Stack: [].'
+    },
+    {
+      phase: 'Step 5 — token = "home" → PUSH  (line 8)',
+      ln: 8, tokIdx: 1, stack: ['home'], action: 'push',
+      actionLabel: 'PUSH "home"',
+      changes: [{ code: 'stack.append(token)', was: 'stack  →  []', now: 'stack  →  ["home"]',
+        why: '"home" is a real directory. Push it. We are now inside /home/.' }],
+      vars: { path: '/home//foo/', stack: '["home"]', token: '"home"' },
+      explain: 'ARROW CHANGED ↷: token = "home". stack = ["home"]. Current location: /home/.'
+    },
+    {
+      phase: 'Step 6 — token = "" → SKIP  (line 7)  ← this is the "//"',
+      ln: 7, tokIdx: 2, stack: ['home'], action: 'skip',
+      actionLabel: 'SKIP — empty string produced by the "//"',
+      doubleSlashNote: true,
+      changes: [],
+      vars: { path: '/home//foo/', stack: '["home"]', token: '""' },
+      explain: 'THIS IS THE KEY STEP. token = "" — this empty string was produced by the double slash "//". "elif token and ..." is False (empty string is falsy). We skip it exactly like any other empty string. The "//" is now fully handled. Stack unchanged: ["home"].'
+    },
+    {
+      phase: 'Step 7 — token = "foo" → PUSH  (line 8)',
+      ln: 8, tokIdx: 3, stack: ['home', 'foo'], action: 'push',
+      actionLabel: 'PUSH "foo"',
+      changes: [{ code: 'stack.append(token)', was: 'stack  →  ["home"]', now: 'stack  →  ["home", "foo"]',
+        why: '"foo" is a real directory. Push it. We are now at /home/foo/.' }],
+      vars: { path: '/home//foo/', stack: '["home", "foo"]', token: '"foo"' },
+      explain: 'ARROW CHANGED ↷: token = "foo". stack = ["home", "foo"]. The "//" is already gone — we continue as if it never existed.'
+    },
+    {
+      phase: 'Step 8 — token = "" → SKIP  (line 7)',
+      ln: 7, tokIdx: 4, stack: ['home', 'foo'], action: 'skip',
+      actionLabel: 'SKIP — empty string (from trailing "/")',
+      changes: [],
+      vars: { path: '/home//foo/', stack: '["home", "foo"]', token: '""' },
+      explain: 'token = "" (from trailing "/"). Falsy → skip. Loop done. Stack = ["home", "foo"].'
+    },
+    {
+      phase: 'Step 9 — Build result  (line 9)',
+      ln: 9, tokIdx: -1, stack: ['home', 'foo'], action: 'result',
+      actionLabel: 'RESULT: "/home/foo"',
+      changes: [],
+      vars: { path: '/home//foo/', stack: '["home", "foo"]', token: '—' },
+      explain: '"/" + "/".join(["home", "foo"]) = "/home/foo". The double slash was collapsed automatically — the same mechanism that strips leading/trailing slashes (empty strings from split) also collapses consecutive slashes. Zero extra code needed.'
+    }
+  ]
+}
+
+]; // end EXAMPLES
+
+let curTab = 0;
+let cur    = 0;
+
+function switchTab(idx) {
+  curTab = idx;
+  cur    = 0;
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === idx));
+  render();
+}
+
+function tokenStripH(s, displayTokens) {
   const label = s.tokIdx >= 0
-    ? `Processing token [${s.tokIdx}] of ${DISPLAY_TOKENS.length}`
+    ? `Processing token [${s.tokIdx}] of ${displayTokens.length}`
     : 'tokens from path.split("/")';
-  const toks = DISPLAY_TOKENS.map((t, i) => {
+  const toks = displayTokens.map((t, i) => {
     let cls = 'tok';
-    if (i === s.tokIdx) cls += ' t-curr';
+    if (i === s.tokIdx) cls += (s.action === 'noop') ? ' t-curr-special' : ' t-curr';
     else if (i < s.tokIdx) cls += ' t-done';
     return `<div class="${cls}">${t}</div>`;
   }).join('');
@@ -335,15 +444,27 @@ function tokenStripH(s) {
 
 function actionH(s) {
   if (s.action === 'none') return '';
-  const cls = { push:'act-push', pop:'act-pop', skip:'act-skip', result:'act-result' }[s.action] || 'act-none';
-  const icon = { push:'↑', pop:'↓', skip:'⊘', result:'✓' }[s.action] || '';
-  return `<div class="action-row"><span class="action-badge ${cls}">${icon} &nbsp;${s.actionLabel}</span></div>`;
+  const cls  = { push:'act-push', pop:'act-pop', skip:'act-skip', noop:'act-noop', result:'act-result' }[s.action] || 'act-none';
+  const icon = { push:'↑', pop:'↓', skip:'⊘', noop:'⊘↓', result:'✓' }[s.action] || '';
+  let html = `<div class="action-row"><span class="action-badge ${cls}">${icon}&nbsp;&nbsp;${s.actionLabel}</span></div>`;
+  if (s.noopCallout) {
+    html += `<div class="noop-callout">
+      <div class="noop-title">Why no pop? — "if stack:" evaluated at line 5</div>
+      <div class="noop-body">stack = [] is <strong>falsy</strong> in Python. The body of "if stack:" is skipped entirely. No IndexError, no crash. The filesystem rule "'..' from root stays at root" is enforced by a single truthiness check — not a special-case branch.</div>
+    </div>`;
+  }
+  if (s.doubleSlashNote) {
+    html += `<div class="noop-callout" style="border-color:#58a6ff;background:#0c1f3d">
+      <div class="noop-title" style="color:#58a6ff">Where did the "//" go?</div>
+      <div class="noop-body">"home" + "/" + "" + "/" + "foo" &nbsp;=&nbsp; "home//foo". The split cut the string at every "/", producing an empty string between the two consecutive slashes. Skipping empty tokens is the same operation that removes leading and trailing slashes — here it also collapses double slashes.</div>
+    </div>`;
+  }
+  return html;
 }
 
 function stackH(s) {
   const stack = s.stack;
   let rows = [];
-
   if (s.action === 'pop' && s.poppedVal !== undefined) {
     rows.push(`<div class="stack-item t-pop">${s.poppedVal}<span class="stack-tag tag-pop">popped</span></div>`);
     for (let i = stack.length - 1; i >= 0; i--) {
@@ -353,12 +474,8 @@ function stackH(s) {
   } else if (s.action === 'push') {
     for (let i = stack.length - 1; i >= 0; i--) {
       const isNew = i === stack.length - 1;
-      rows.push(`<div class="stack-item${isNew ? ' t-push' : ''}">${stack[i]}<span class="stack-tag ${isNew ? 'tag-push' : 'tag-top'}">${isNew ? 'pushed' : 'top'}</span></div>`);
-      if (!isNew && i === stack.length - 2) {
-        // already rendered the pushed top; this is below it — no tag needed after top
-      }
+      rows.push(`<div class="stack-item${isNew ? ' t-push' : ''}">${stack[i]}<span class="stack-tag ${isNew ? 'tag-push' : 'tag-top'}">${isNew ? 'pushed' : ''}</span></div>`);
     }
-    // Fix: only show 'top' tag on the newly pushed item (it IS the top)
   } else {
     if (stack.length === 0) {
       rows.push('<span class="stack-empty">[ empty ]</span>');
@@ -369,7 +486,6 @@ function stackH(s) {
       }
     }
   }
-
   return `<div class="stack-section">
     <div class="stack-label">Stack — top ↓ bottom</div>
     <div class="stack-container">${rows.join('')}</div>
@@ -391,22 +507,23 @@ function changesH(changes) {
 }
 
 function render() {
-  const s = STEPS[cur];
+  const ex = EXAMPLES[curTab];
+  const s  = ex.steps[cur];
 
   document.getElementById('phase-pill').textContent = s.phase;
 
-  let html = tokenStripH(s);
+  let html = tokenStripH(s, ex.displayTokens);
   html += actionH(s);
   html += stackH(s);
   if (s.action === 'result') {
-    html += `<div class="result-box">✓ &nbsp; Result: &nbsp; "/c"</div>`;
+    html += `<div class="result-box">✓ &nbsp; Result: &nbsp; "${ex.result}"</div>`;
   }
   html += changesH(s.changes);
   html += `<div class="legend">
     <div class="legend-item"><div class="leg-dot" style="background:#12261e;border:1px solid #238636"></div>Just pushed</div>
     <div class="legend-item"><div class="leg-dot" style="background:#2d1317;border:1px solid #da3633"></div>Just popped</div>
     <div class="legend-item"><div class="leg-dot" style="background:#2d1a00;border:1px solid #ffa657"></div>Skipped token</div>
-    <div class="legend-item"><div class="leg-dot" style="background:#21262d;border:1px solid #484f58;text-decoration:line-through"></div>Already processed</div>
+    <div class="legend-item"><div class="leg-dot" style="background:#2d1317;border:1px dashed #da3633"></div>".." with empty stack — no-op</div>
   </div>`;
 
   document.getElementById('viz-content').innerHTML = html;
@@ -420,15 +537,16 @@ function render() {
   ).join('');
 
   document.getElementById('explain').textContent = s.explain;
-  document.getElementById('step-counter').textContent = `${cur + 1} / ${STEPS.length}`;
-  document.getElementById('progress-bar').style.width = ((cur + 1) / STEPS.length * 100) + '%';
+  document.getElementById('step-counter').textContent = `${cur + 1} / ${ex.steps.length}`;
+  document.getElementById('progress-bar').style.width = ((cur + 1) / ex.steps.length * 100) + '%';
   document.getElementById('btn-prev').disabled = cur === 0;
-  document.getElementById('btn-next').disabled = cur === STEPS.length - 1;
+  document.getElementById('btn-next').disabled = cur === ex.steps.length - 1;
 }
 
 function go(dir) {
+  const ex   = EXAMPLES[curTab];
   const next = cur + dir;
-  if (next >= 0 && next < STEPS.length) { cur = next; render(); }
+  if (next >= 0 && next < ex.steps.length) { cur = next; render(); }
 }
 
 document.addEventListener('keydown', e => {

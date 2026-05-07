@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LC 739 — Daily Temperatures</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0d1117; color: #c9d1d9; font-family: 'Consolas','Monaco',monospace; min-height: 100vh; display: flex; flex-direction: column; }
+header { padding: 16px 28px; border-bottom: 1px solid #30363d; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+header h1 { font-size: 1.15rem; color: #e6edf3; }
+.badge { padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+.medium { background: #3d2b00; color: #ffa657; }
+.time-badge { background: #0c1f3d; color: #58a6ff; }
+.space-badge { background: #1b1327; color: #d2a8ff; }
+#progress { height: 3px; background: #21262d; flex-shrink: 0; }
+#progress-bar { height: 3px; background: #58a6ff; transition: width 0.25s; }
+main { display: grid; grid-template-columns: 1fr 1fr; flex: 1; min-height: 0; }
+.panel { border-right: 1px solid #30363d; padding: 18px 22px; overflow-y: auto; }
+.panel:last-child { border-right: none; }
+.phase-pill { display: inline-block; background: #21262d; color: #58a6ff; border: 1px solid #30363d; border-radius: 20px; padding: 4px 14px; font-size: 0.78rem; margin-bottom: 14px; }
+.arr-label { font-size: 0.72rem; color: #6e7681; margin-bottom: 6px; letter-spacing: 0.03em; }
+.arr-strip { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.arr-cell { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.arr-val { padding: 6px 10px; border: 1px solid #30363d; border-radius: 6px; font-size: 0.88rem; font-weight: 600; background: #161b22; color: #8b949e; min-width: 44px; text-align: center; transition: all 0.15s; }
+.arr-idx { font-size: 0.62rem; color: #484f58; }
+.arr-val.t-curr  { border-color: #238636; background: #12261e; color: #56d364; }
+.arr-val.t-done  { border-color: #21262d; background: #0d1117; color: #484f58; }
+.arr-val.t-stack { border-color: #1f6feb; background: #0c1f3d; color: #58a6ff; }
+.arr-val.t-pop   { border-color: #da3633; background: #2d1317; color: #da3633; }
+.arr-val.t-result{ border-color: #8957e5; background: #1b1327; color: #d2a8ff; }
+.ans-val { padding: 6px 10px; border: 1px solid #21262d; border-radius: 6px; font-size: 0.88rem; background: #0d1117; color: #484f58; min-width: 44px; text-align: center; }
+.ans-val.filled      { border-color: #8957e5; background: #1b1327; color: #d2a8ff; font-weight: 700; }
+.ans-val.just-filled { border-color: #56d364; background: #0d2b0d; color: #56d364; font-weight: 700; }
+.action-row { margin: 8px 0 12px; }
+.action-badge { display: inline-flex; align-items: center; gap: 8px; padding: 5px 16px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; }
+.act-push   { background: #0d2b0d; color: #56d364; border: 1px solid #238636; }
+.act-pop    { background: #2d1317; color: #da3633; border: 1px solid #da3633; }
+.act-none   { background: #161b22; color: #8b949e; border: 1px solid #30363d; }
+.act-result { background: #1b1327; color: #d2a8ff; border: 1px solid #8957e5; }
+.stack-label { font-size: 0.72rem; color: #6e7681; margin-bottom: 8px; }
+.stack-container { display: flex; flex-direction: column; gap: 6px; min-height: 28px; margin-bottom: 14px; }
+.stack-empty { font-size: 0.82rem; color: #484f58; font-style: italic; }
+.stack-item { padding: 7px 14px; border: 1px solid #30363d; border-radius: 6px; font-size: 0.85rem; background: #161b22; color: #c9d1d9; display: flex; align-items: center; justify-content: space-between; }
+.stack-item.t-push { border-color: #238636; background: #12261e; color: #56d364; box-shadow: 0 0 8px #23863640; }
+.stack-item.t-pop  { border-color: #da3633; background: #2d1317; color: #da3633; text-decoration: line-through; opacity: 0.7; }
+.stack-tag { font-size: 0.63rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; margin-left: 8px; }
+.tag-push { background: #238636; color: #fff; }
+.tag-pop  { background: #da3633; color: #fff; }
+.tag-top  { background: #1f6feb; color: #fff; }
+.changes-panel { border: 1px solid #30363d; border-radius: 8px; padding: 12px 16px; margin-top: 10px; background: #0d1117; }
+.changes-title { font-size: 0.7rem; color: #8b949e; font-weight: 600; margin-bottom: 8px; letter-spacing: 0.05em; }
+.no-change { font-size: 0.8rem; color: #484f58; font-style: italic; }
+.change-row { border-left: 3px solid #ffa657; padding-left: 10px; margin-bottom: 10px; }
+.change-row:last-child { margin-bottom: 0; }
+.change-code { font-size: 0.82rem; color: #ffa657; font-weight: 700; margin-bottom: 3px; }
+.change-was  { font-size: 0.77rem; color: #8b949e; }
+.change-was span { text-decoration: line-through; color: #da3633; }
+.change-now  { font-size: 0.77rem; color: #8b949e; }
+.change-now span { color: #56d364; font-weight: 700; }
+.change-why  { font-size: 0.77rem; color: #6e7681; margin-top: 3px; font-style: italic; }
+.result-box { margin-top: 12px; padding: 12px 18px; background: #1b1327; border: 2px solid #8957e5; border-radius: 8px; text-align: center; color: #d2a8ff; font-size: 1rem; font-weight: 700; }
+.legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #21262d; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.7rem; color: #8b949e; }
+.leg-dot { width: 13px; height: 13px; border-radius: 3px; flex-shrink: 0; }
+.code-block { background: #0d1117; border: 1px solid #21262d; border-radius: 8px; padding: 14px; font-size: 0.83rem; line-height: 1.85; overflow-x: auto; margin-bottom: 14px; }
+.code-line { display: block; padding: 1px 6px; border-radius: 4px; }
+.code-line.active { background: #1f2d1f; border-left: 3px solid #56d364; margin-left: -6px; padding-left: 3px; }
+.kw { color: #ff7b72; } .fn { color: #d2a8ff; } .cm { color: #8b949e; font-style: italic; } .nu { color: #79c0ff; } .var { color: #e6edf3; }
+.vars-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; margin-bottom: 14px; }
+.var-cell { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 8px 12px; }
+.var-name { font-size: 0.67rem; color: #6e7681; margin-bottom: 2px; }
+.var-val  { font-size: 0.82rem; color: #e6edf3; font-weight: 600; word-break: break-all; }
+footer { border-top: 1px solid #30363d; padding: 10px 28px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+.btn { background: #21262d; border: 1px solid #30363d; color: #c9d1d9; padding: 6px 20px; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 0.85rem; }
+.btn:hover:not(:disabled) { background: #30363d; }
+.btn:disabled { opacity: 0.35; cursor: default; }
+#explain { flex: 1; font-size: 0.82rem; color: #8b949e; line-height: 1.5; }
+#step-counter { font-size: 0.78rem; color: #6e7681; white-space: nowrap; }
+.key-hint { text-align: center; font-size: 0.67rem; color: #484f58; padding: 4px; border-top: 1px solid #21262d; flex-shrink: 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>LC 739 — Daily Temperatures</h1>
+  <span class="badge medium">Medium</span>
+  <span class="badge time-badge">Time O(n)</span>
+  <span class="badge space-badge">Space O(n)</span>
+</header>
+<div id="progress"><div id="progress-bar"></div></div>
+<main>
+  <div class="panel" id="viz-panel">
+    <div id="phase-pill" class="phase-pill"></div>
+    <div id="viz-content"></div>
+  </div>
+  <div class="panel">
+    <div class="code-block">
+      <span class="code-line" data-ln="1"><span class="kw">def</span> <span class="fn">dailyTemperatures</span>(<span class="var">self</span>, <span class="var">temperatures</span>):</span>
+      <span class="code-line" data-ln="2">    <span class="var">ans</span> = [<span class="nu">0</span>] * <span class="fn">len</span>(<span class="var">temperatures</span>)</span>
+      <span class="code-line" data-ln="3">    <span class="var">stack</span> = []  <span class="cm"># indices</span></span>
+      <span class="code-line" data-ln="4">    <span class="kw">for</span> <span class="var">i</span>, <span class="var">temp</span> <span class="kw">in</span> <span class="fn">enumerate</span>(<span class="var">temperatures</span>):</span>
+      <span class="code-line" data-ln="5">        <span class="kw">while</span> <span class="var">stack</span> <span class="kw">and</span> <span class="var">temp</span> &gt; <span class="var">temperatures</span>[<span class="var">stack</span>[-<span class="nu">1</span>]]:</span>
+      <span class="code-line" data-ln="6">            <span class="var">idx</span> = <span class="var">stack</span>.<span class="fn">pop</span>()</span>
+      <span class="code-line" data-ln="7">            <span class="var">ans</span>[<span class="var">idx</span>] = <span class="var">i</span> - <span class="var">idx</span></span>
+      <span class="code-line" data-ln="8">        <span class="var">stack</span>.<span class="fn">append</span>(<span class="var">i</span>)</span>
+      <span class="code-line" data-ln="9">    <span class="kw">return</span> <span class="var">ans</span></span>
+    </div>
+    <div class="vars-grid" id="vars-grid"></div>
+  </div>
+</main>
+<footer>
+  <button class="btn" id="btn-prev" onclick="go(-1)">← Prev</button>
+  <div id="explain"></div>
+  <span id="step-counter"></span>
+  <button class="btn" id="btn-next" onclick="go(1)">Next →</button>
+</footer>
+<div class="key-hint">keyboard: ← → arrow keys</div>
+<script>
+const TEMPS = [73,74,75,71,69,72,76,73];
+
+const STEPS = [
+  {
+    phase: 'Step 1 — Problem Setup  (line 1)',
+    ln: 1,
+    temps: TEMPS.map(v => ({ v, cls: 'normal' })),
+    ans: [0,0,0,0,0,0,0,0], justFilled: -1,
+    stack: [], action: 'none', actionLabel: '',
+    changes: [],
+    vars: { i: '—', temp: '—', stack: '[]', ans: '[0,0,0,0,0,0,0,0]' },
+    explain: 'Given temperatures [73,74,75,71,69,72,76,73], return how many days until a warmer temperature for each day. A monotonic decreasing stack stores indices of days still waiting for their warmer day — when we find one, we pop and record the gap.'
+  },
+  {
+    phase: 'Step 2 — i=0, temp=73, stack empty → push  (line 8)',
+    ln: 8,
+    temps: TEMPS.map((v,i) => ({ v, cls: i===0?'curr':'normal' })),
+    ans: [0,0,0,0,0,0,0,0], justFilled: -1,
+    stack: [{ idx:0, val:73, cls:'push' }], action: 'push', actionLabel: 'stack.append(0)  →  [0]',
+    changes: [{ code:'stack.append(0)', was:'stack  →  []', now:'stack  →  [0]', why:'Stack is empty so the while condition is false. Push index 0 — it is waiting for a future day warmer than 73°.' }],
+    vars: { i:'0', temp:'73', stack:'[0]', ans:'[0,…]' },
+    explain: 'i=0, temp=73. While condition: stack empty → skip. Push index 0 onto the stack. The stack holds INDICES, not temperatures. Index 0 now waits for a warmer day.'
+  },
+  {
+    phase: 'Step 3 — i=1, temp=74 > 73: pop idx 0  (lines 5–7)',
+    ln: 7,
+    temps: TEMPS.map((v,i) => ({ v, cls: i===1?'curr': i===0?'pop':'normal' })),
+    ans: [1,0,0,0,0,0,0,0], justFilled: 0,
+    stack: [], action: 'pop', actionLabel: 'pop idx=0  →  ans[0] = 1−0 = 1',
+    changes: [{ code:'ans[0] = i − idx', was:'ans[0]  →  0', now:'ans[0]  →  1', why:'temp=74 > temperatures[0]=73. Index 0 found its warmer day after 1 day. Pop it and record the gap.' }],
+    vars: { i:'1', temp:'74', 'idx (popped)':'0', stack:'[]', ans:'[1,0,…]' },
+    explain: 'OPERATION ↷: temp=74 > temperatures[stack[-1]]=73. Pop index 0. ans[0] = 1−0 = 1 day. Stack empty — while exits. Ready to push index 1.'
+  },
+  {
+    phase: 'Step 4 — push index 1  (line 8)',
+    ln: 8,
+    temps: TEMPS.map((v,i) => ({ v, cls: i===1?'curr': i===0?'done':'normal' })),
+    ans: [1,0,0,0,0,0,0,0], justFilled: -1,
+    stack: [{ idx:1, val:74, cls:'push' }], action: 'push', actionLabel: 'stack.append(1)  →  [1]',
+    changes: [{ code:'stack.append(1)', was:'stack  →  []', now:'stack  →  [1]', why:'Stack is empty after the pop. Push index 1 (74°). It will wait until a day warmer than 74°.' }],
+    vars: { i:'1', temp:'74', stack:'[1]', ans:'[1,0,…]' },
+    explain: 'Stack was emptied. Push index 1. Index 0 is resolved (ans[0]=1 ✓). Stack now holds [1] waiting for a day above 74°.'
+  },
+  {
+    phase: 'Step 5 — i=2, temp=75 > 74: pop idx 1  (lines 5–7)',
+    ln: 7,
+    temps: TEMPS.map((v,i) => ({ v, cls: i===2?'curr': i===1?'pop': i<1?'done':'normal' })),
+    ans: [1,1,0,0,0,0,0,0], justFilled: 1,
+    stack: [], action: 'pop', actionLabel: 'pop idx=1  →  ans[1] = 2−1 = 1',
+    changes: [{ code:'ans[1] = i − idx', was:'ans[1]  →  0', now:'ans[1]  →  1', why:'temp=75 > temperatures[1]=74. Pop index 1. Gap = 2−1 = 1 day.' }],
+    vars: { i:'2', temp:'75', 'idx (popped)':'1', stack:'[]', ans:'[1,1,0,…]' },
+    explain: 'OPERATION ↷: 75 > 74. Pop index 1, ans[1]=1. Stack empty. Push index 2 next.'
+  },
+  {
+    phase: 'Step 6 — push index 2  (line 8)',
+    ln: 8,
+    temps: TEMPS.map((v,i) => ({ v, cls: i===2?'curr': i<2?'done':'normal' })),
+    ans: [1,1,0,0,0,0,0,0], justFilled: -1,
+    stack: [{ idx:2, val:75, cls:'push' }], action: 'push', actionLabel: 'stack.append(2)  →  [2]',
+    changes: [{ code:'stack.append(2)', was:'stack  →  []', now:'stack  →  [2]', why:'Push index 2 (75°). This is the highest temp so far — it will wait until i=6 (76°) to be resolved.' }],
+    vars: { i:'2', temp:'75', stack:'[2]', ans:'[1,1,0,…]' },
+    explain: 'Push index 2 (75°). Indices 0 and 1 are resolved. Index 2 will wait the longest — four days — until 76° arrives at i=6.'
+  },
+  {
+    phase: 'Step 7 — i=3, temp=71 < 75: push  (line 8)',
+    ln: 8,
+    temps: TEMPS.map((v,i) => ({ v, cls: i===3?'curr': i<2?'done': i===2?'stack':'normal' })),
+    ans: [1,1,0,0,0,0,0,0], justFilled: -1,
+    stack: [{ idx:2, val:75, cls:'normal' }, { idx:3, val:71, cls:'push' }],
+    action: 'push', actionLabel: 'stack.append(3)  →  [2, 3]',
+    changes: [{ code:'stack.append(3)', was:'stack  →  [2]', now:'stack  →  [2, 3]', why:'71 < 75, so while condition is false. Push index 3. Stack stays monotonically decreasing in temperature.' }],
+    vars: { i:'3', temp:'71', stack:'[2, 3]', ans:'[1,1,0,0,…]' },
+    explain: 'temp=71 is NOT warmer than 75 (stack top). While exits immediately. Push index 3. Stack = [2,3] — both waiting. The key invariant: temperatures at stack indices are always decreasing.'
+  },
+  {
+    phase: 'Step 8 — i=4, temp=69 < 71: push  (line 8)',
+    ln: 8,
+    temps: TEMPS.map((v,i) => ({ v, cls: i===4?'curr': i<2?'done': (i===2||i===3)?'stack':'normal' })),
+    ans: [1,1,0,0,0,0,0,0], justFilled: -1,
+    stack: [{ idx:2, val:75, cls:'normal' }, { idx:3, val:71, cls:'normal' }, { idx:4, val:69, cls:'push' }],
+    action: 'push', actionLabel: 'stack.append(4)  →  [2, 3, 4]',
+    changes: [{ code:'stack.append(4)', was:'stack  →  [2, 3]', now:'stack  →  [2, 3, 4]', why:'69 < 71. Push index 4. Three days now waiting: 75°, 71°, 69°.' }],
+    vars: { i:'4', temp:'69', stack:'[2, 3, 4]', ans:'[1,1,0,0,0,…]' },
+    explain: 'Another cold day. Stack = [2,3,4] holding temps [75°,71°,69°]. This is the maximum the stack grows in this example. Notice the temperatures are strictly decreasing from bottom to top.'
+  },
+  {
+    phase: 'Step 9 — i=5, temp=72 > 69: pop idx 4  (lines 5–7)',
+    ln: 7,
+    temps: TEMPS.map((v,i) => ({ v, cls: i===5?'curr': i<2?'done': i===4?'pop': (i===2||i===3)?'stack':'normal' })),
+    ans: [1,1,0,0,1,0,0,0], justFilled: 4,
+    stack: [{ idx:2, val:75, cls:'normal' }, { idx:3, val:71, cls:'normal' }],
+    action: 'pop', actionLabel: 'pop idx=4  →  ans[4] = 5−4 = 1',
+    changes: [{ code:'ans[4] = i − idx', was:'ans[4]  →  0', now:'ans[4]  →  1', why:'72 > 69. Pop index 4, gap = 1 day. While loop continues — new stack top is index 3 (71°). Is 72 > 71? Yes — loop runs again.' }],
+    vars: { i:'5', temp:'72', 'idx (popped)':'4', stack:'[2, 3]', ans:'[1,1,0,0,1,0,…]' },
+    explain: 'OPERATION ↷: 72 > 69. Pop index 4, ans[4]=1. The while loop does NOT stop — it immediately checks the new stack top (index 3, temp=71°). One iteration of i can pop multiple times.'
+  },
+  {
+    phase: 'Step 10 — i=5 continues: 72 > 71: pop idx 3  (lines 5–7)',
+    ln: 7,
+    temps: TEMPS.map((v,i) => ({ v, cls: i===5?'curr': i<2?'done': i===4?'done': i===3?'pop': i===2?'stack':'normal' })),
+    ans: [1,1,0,2,1,0,0,0], justFilled: 3,
+    stack: [{ idx:2, val:75, cls:'normal' }],
+    action: 'pop', actionLabel: 'pop idx=3  →  ans[3] = 5−3 = 2',
+    changes: [{ code:'ans[3] = i − idx', was:'ans[3]  →  0', now:'ans[3]  →  2', why:'72 > 71. Pop index 3, gap = 2 days. New stack top is index 2 (75°). Is 72 > 75? No — while exits.' }],
+    vars: { i:'5', temp:'72', 'idx (popped)':'3', stack:'[2]', ans:'[1,1,0,2,1,0,…]' },
+    explain: 'OPERATION ↷: 72 > 71. Pop index 3, ans[3]=2. Stack top is now index 2 (75°). 72 < 75, so the while loop finally stops. One step of i=5 resolved TWO waiting indices — this is the amortized O(n).'
+  },
+  {
+    phase: 'Step 11 — push index 5  (line 8)',
+    ln: 8,
+    temps: TEMPS.map((v,i) => ({ v, cls: i===5?'curr': i<5?'done': i===2?'stack':'normal' })),
+    ans: [1,1,0,2,1,0,0,0], justFilled: -1,
+    stack: [{ idx:2, val:75, cls:'normal' }, { idx:5, val:72, cls:'push' }],
+    action: 'push', actionLabel: 'stack.append(5)  →  [2, 5]',
+    changes: [{ code:'stack.append(5)', was:'stack  →  [2]', now:'stack  →  [2, 5]', why:'72 < 75 so while exits. Push index 5. It waits for a day warmer than 72°.' }],
+    vars: { i:'5', temp:'72', stack:'[2, 5]', ans:'[1,1,0,2,1,0,…]' },
+    explain: 'While exits (72 < 75). Push index 5 (72°). Stack = [2,5]: indices waiting for temps above 75° and 72° respectively.'
+  },
+  {
+    phase: 'Step 12 — i=6, temp=76: pop 5 then pop 2  (lines 5–7)',
+    ln: 7,
+    temps: TEMPS.map((v,i) => ({ v, cls: i===6?'curr': i<6?'done':'normal' })),
+    ans: [1,1,4,2,1,1,0,0], justFilled: -1,
+    stack: [],
+    action: 'pop', actionLabel: 'pop idx=5 (ans[5]=1), pop idx=2 (ans[2]=4)',
+    changes: [
+      { code:'ans[5] = i − idx', was:'ans[5]  →  0', now:'ans[5]  →  1', why:'76 > 72. Pop index 5. Gap = 6−5 = 1 day.' },
+      { code:'ans[2] = i − idx', was:'ans[2]  →  0', now:'ans[2]  →  4', why:'76 > 75. Pop index 2. Gap = 6−2 = 4 days! Day 2 (75°) had to wait the longest — until this hottest day arrived.' }
+    ],
+    vars: { i:'6', temp:'76', stack:'[]', ans:'[1,1,4,2,1,1,0,0]' },
+    explain: 'OPERATION ↷: temp=76° is the maximum. It triggers two consecutive pops: ans[5]=1 and ans[2]=4. Stack empties. The hottest element clears all accumulated backlog in a single pass.'
+  },
+  {
+    phase: 'Step 13 — push 6, push 7, return  (lines 8–9)',
+    ln: 9,
+    temps: TEMPS.map(v => ({ v, cls: 'result' })),
+    ans: [1,1,4,2,1,1,0,0], justFilled: -1,
+    stack: [],
+    action: 'result', actionLabel: 'return ans',
+    changes: [],
+    vars: { i:'7 (done)', temp:'73', stack:'[6,7]→[]', ans:'[1,1,4,2,1,1,0,0]' },
+    explain: 'i=6 pushes index 6 (76°). i=7: temp=73 < 76, pushes index 7. Loop ends. Indices still in stack (6 and 7) keep ans[i]=0 — no warmer day ever came. Final: [1,1,4,2,1,1,0,0]. Each index pushed once and popped at most once → O(n) total.'
+  }
+];
+
+let cur = 0;
+
+function render() {
+  const s = STEPS[cur];
+  document.getElementById('phase-pill').textContent = s.phase;
+
+  let html = '';
+  html += `<div class="arr-label">temperatures[] — input</div><div class="arr-strip">`;
+  s.temps.forEach((cell,i) => {
+    const cls = {curr:'t-curr',done:'t-done',stack:'t-stack',result:'t-result',pop:'t-pop',normal:''}[cell.cls]||'';
+    html += `<div class="arr-cell"><div class="arr-val ${cls}">${cell.v}°</div><div class="arr-idx">[${i}]</div></div>`;
+  });
+  html += '</div>';
+
+  html += `<div class="arr-label">ans[] — days until warmer</div><div class="arr-strip">`;
+  s.ans.forEach((v,i) => {
+    const cls = i===s.justFilled ? 'just-filled' : v>0 ? 'filled' : '';
+    html += `<div class="arr-cell"><div class="ans-val ${cls}">${v}</div><div class="arr-idx">[${i}]</div></div>`;
+  });
+  html += '</div>';
+
+  if (s.action !== 'none') {
+    const cls = {push:'act-push',pop:'act-pop',result:'act-result'}[s.action]||'act-none';
+    const icon = {push:'↑',pop:'↓',result:'✓'}[s.action]||'';
+    html += `<div class="action-row"><span class="action-badge ${cls}">${icon}&nbsp;&nbsp;${s.actionLabel}</span></div>`;
+  }
+
+  html += `<div class="stack-label">Stack — stores indices (top → bottom)</div><div class="stack-container">`;
+  if (s.stack.length === 0) {
+    html += '<span class="stack-empty">[ empty ]</span>';
+  } else {
+    for (let i = s.stack.length-1; i >= 0; i--) {
+      const item = s.stack[i];
+      const isTop = i === s.stack.length-1;
+      const cls = item.cls==='push'?'t-push': item.cls==='pop'?'t-pop':'';
+      const tag = item.cls==='push' ? '<span class="stack-tag tag-push">pushed</span>'
+                : isTop ? '<span class="stack-tag tag-top">top</span>' : '';
+      html += `<div class="stack-item ${cls}">index ${item.idx} &nbsp;(${item.val}°)${tag}</div>`;
+    }
+  }
+  html += '</div>';
+
+  if (s.action === 'result') {
+    html += `<div class="result-box">✓ &nbsp; [1, 1, 4, 2, 1, 1, 0, 0]</div>`;
+  }
+
+  if (!s.changes || s.changes.length === 0) {
+    html += `<div class="changes-panel"><div class="changes-title">↷ STACK OPERATIONS THIS STEP</div><div class="no-change">No stack mutation this step — evaluating condition only.</div></div>`;
+  } else {
+    const rows = s.changes.map(c => `<div class="change-row">
+      <div class="change-code">${c.code}</div>
+      <div class="change-was">was: <span>${c.was}</span></div>
+      <div class="change-now">now: <span>${c.now}</span></div>
+      <div class="change-why">${c.why}</div>
+    </div>`).join('');
+    html += `<div class="changes-panel"><div class="changes-title">↷ STACK OPERATION THIS STEP</div>${rows}</div>`;
+  }
+
+  html += `<div class="legend">
+    <div class="legend-item"><div class="leg-dot" style="background:#12261e;border:1px solid #238636"></div>Current</div>
+    <div class="legend-item"><div class="leg-dot" style="background:#0c1f3d;border:1px solid #1f6feb"></div>In stack (waiting)</div>
+    <div class="legend-item"><div class="leg-dot" style="background:#2d1317;border:1px solid #da3633"></div>Being popped</div>
+    <div class="legend-item"><div class="leg-dot" style="background:#1b1327;border:1px solid #8957e5"></div>Answer filled</div>
+    <div class="legend-item"><div class="leg-dot" style="background:#0d2b0d;border:1px solid #56d364"></div>Just filled</div>
+  </div>`;
+
+  document.getElementById('viz-content').innerHTML = html;
+  document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active'));
+  const active = document.querySelector(`.code-line[data-ln="${s.ln}"]`);
+  if (active) active.classList.add('active');
+  document.getElementById('vars-grid').innerHTML = Object.entries(s.vars).map(([k,v]) =>
+    `<div class="var-cell"><div class="var-name">${k}</div><div class="var-val">${v}</div></div>`).join('');
+  document.getElementById('explain').textContent = s.explain;
+  document.getElementById('step-counter').textContent = `${cur+1} / ${STEPS.length}`;
+  document.getElementById('progress-bar').style.width = ((cur+1)/STEPS.length*100)+'%';
+  document.getElementById('btn-prev').disabled = cur===0;
+  document.getElementById('btn-next').disabled = cur===STEPS.length-1;
+}
+
+function go(dir) {
+  const next = cur+dir;
+  if (next>=0 && next<STEPS.length) { cur=next; render(); }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key==='ArrowRight'||e.key==='ArrowDown') go(1);
+  if (e.key==='ArrowLeft' ||e.key==='ArrowUp')   go(-1);
+});
+
+render();
+</script>
+</body>
+</html>

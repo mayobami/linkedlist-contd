@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LC 1856 — Maximum Subarray Min-Product</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0d1117; color: #c9d1d9; font-family: 'Consolas','Monaco',monospace; min-height: 100vh; display: flex; flex-direction: column; }
+header { padding: 16px 28px; border-bottom: 1px solid #30363d; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+header h1 { font-size: 1.15rem; color: #e6edf3; }
+.badge { padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+.hard { background: #2d1317; color: #da3633; }
+.time-badge { background: #0c1f3d; color: #58a6ff; }
+.space-badge { background: #1b1327; color: #d2a8ff; }
+#progress { height: 3px; background: #21262d; flex-shrink: 0; }
+#progress-bar { height: 3px; background: #58a6ff; transition: width 0.25s; }
+main { display: grid; grid-template-columns: 1fr 1fr; flex: 1; min-height: 0; }
+.panel { border-right: 1px solid #30363d; padding: 18px 22px; overflow-y: auto; }
+.panel:last-child { border-right: none; }
+.phase-pill { display: inline-block; background: #21262d; color: #58a6ff; border: 1px solid #30363d; border-radius: 20px; padding: 4px 14px; font-size: 0.78rem; margin-bottom: 14px; }
+.sec-label { font-size: 0.72rem; color: #6e7681; margin-bottom: 6px; letter-spacing: 0.03em; }
+.arr-strip { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.arr-cell { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.arr-val { padding: 6px 10px; border: 1px solid #30363d; border-radius: 6px; font-size: 0.9rem; font-weight: 600; background: #161b22; color: #8b949e; min-width: 36px; text-align: center; transition: all 0.15s; }
+.arr-idx { font-size: 0.62rem; color: #484f58; }
+.arr-val.t-curr  { border-color: #238636; background: #12261e; color: #56d364; }
+.arr-val.t-stack { border-color: #1f6feb; background: #0c1f3d; color: #58a6ff; }
+.arr-val.t-pop   { border-color: #da3633; background: #2d1317; color: #da3633; }
+.arr-val.t-range { border-color: #ffa657; background: #2d1a00; color: #ffa657; }
+.arr-val.t-result{ border-color: #8957e5; background: #1b1327; color: #d2a8ff; }
+.arr-val.t-normal{ border-color: #30363d; background: #161b22; color: #8b949e; }
+.prefix-val { padding: 5px 8px; border: 1px solid #21262d; border-radius: 5px; font-size: 0.82rem; background: #0d1117; color: #6e7681; min-width: 36px; text-align: center; }
+.prefix-val.active { border-color: #8957e5; background: #1b1327; color: #d2a8ff; font-weight: 700; }
+.action-row { margin: 8px 0 12px; }
+.action-badge { display: inline-flex; align-items: center; gap: 8px; padding: 5px 16px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; }
+.act-push   { background: #0d2b0d; color: #56d364; border: 1px solid #238636; }
+.act-pop    { background: #2d1317; color: #da3633; border: 1px solid #da3633; }
+.act-max    { background: #2d1a00; color: #ffa657; border: 1px solid #ffa657; }
+.act-result { background: #1b1327; color: #d2a8ff; border: 1px solid #8957e5; }
+.act-none   { background: #161b22; color: #8b949e; border: 1px solid #30363d; }
+.max-tracker { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 10px 14px; margin: 8px 0 12px; font-size: 0.82rem; display: flex; gap: 20px; align-items: center; }
+.max-tracker.updated { border-color: #ffa657; background: #2d1a00; }
+.max-label { color: #6e7681; font-size: 0.7rem; }
+.max-val   { color: #ffa657; font-size: 1.1rem; font-weight: 700; }
+.max-sub   { color: #8b949e; font-size: 0.77rem; margin-top: 2px; }
+.stack-label { font-size: 0.72rem; color: #6e7681; margin-bottom: 8px; }
+.stack-container { display: flex; flex-direction: column; gap: 6px; min-height: 28px; margin-bottom: 14px; }
+.stack-empty { font-size: 0.82rem; color: #484f58; font-style: italic; }
+.stack-item { padding: 7px 14px; border: 1px solid #30363d; border-radius: 6px; font-size: 0.85rem; background: #161b22; color: #c9d1d9; display: flex; align-items: center; justify-content: space-between; }
+.stack-item.t-push { border-color: #238636; background: #12261e; color: #56d364; box-shadow: 0 0 8px #23863640; }
+.stack-item.t-pop  { border-color: #da3633; background: #2d1317; color: #da3633; text-decoration: line-through; opacity: 0.7; }
+.stack-tag { font-size: 0.63rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; margin-left: 8px; }
+.tag-push { background: #238636; color: #fff; }
+.tag-pop  { background: #da3633; color: #fff; }
+.tag-top  { background: #1f6feb; color: #fff; }
+.changes-panel { border: 1px solid #30363d; border-radius: 8px; padding: 12px 16px; margin-top: 10px; background: #0d1117; }
+.changes-title { font-size: 0.7rem; color: #8b949e; font-weight: 600; margin-bottom: 8px; letter-spacing: 0.05em; }
+.no-change { font-size: 0.8rem; color: #484f58; font-style: italic; }
+.change-row { border-left: 3px solid #ffa657; padding-left: 10px; margin-bottom: 10px; }
+.change-row:last-child { margin-bottom: 0; }
+.change-code { font-size: 0.82rem; color: #ffa657; font-weight: 700; margin-bottom: 3px; }
+.change-was  { font-size: 0.77rem; color: #8b949e; }
+.change-was span { text-decoration: line-through; color: #da3633; }
+.change-now  { font-size: 0.77rem; color: #8b949e; }
+.change-now span { color: #56d364; font-weight: 700; }
+.change-why  { font-size: 0.77rem; color: #6e7681; margin-top: 3px; font-style: italic; }
+.result-box { margin-top: 12px; padding: 12px 18px; background: #1b1327; border: 2px solid #8957e5; border-radius: 8px; text-align: center; color: #d2a8ff; font-size: 1rem; font-weight: 700; }
+.legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #21262d; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.7rem; color: #8b949e; }
+.leg-dot { width: 13px; height: 13px; border-radius: 3px; flex-shrink: 0; }
+.code-block { background: #0d1117; border: 1px solid #21262d; border-radius: 8px; padding: 14px; font-size: 0.83rem; line-height: 1.85; overflow-x: auto; margin-bottom: 14px; }
+.code-line { display: block; padding: 1px 6px; border-radius: 4px; }
+.code-line.active { background: #1f2d1f; border-left: 3px solid #56d364; margin-left: -6px; padding-left: 3px; }
+.kw { color: #ff7b72; } .fn { color: #d2a8ff; } .cm { color: #8b949e; font-style: italic; } .nu { color: #79c0ff; } .var { color: #e6edf3; }
+.vars-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; margin-bottom: 14px; }
+.var-cell { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 8px 12px; }
+.var-name { font-size: 0.67rem; color: #6e7681; margin-bottom: 2px; }
+.var-val  { font-size: 0.82rem; color: #e6edf3; font-weight: 600; word-break: break-all; }
+footer { border-top: 1px solid #30363d; padding: 10px 28px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+.btn { background: #21262d; border: 1px solid #30363d; color: #c9d1d9; padding: 6px 20px; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 0.85rem; }
+.btn:hover:not(:disabled) { background: #30363d; }
+.btn:disabled { opacity: 0.35; cursor: default; }
+#explain { flex: 1; font-size: 0.82rem; color: #8b949e; line-height: 1.5; }
+#step-counter { font-size: 0.78rem; color: #6e7681; white-space: nowrap; }
+.key-hint { text-align: center; font-size: 0.67rem; color: #484f58; padding: 4px; border-top: 1px solid #21262d; flex-shrink: 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>LC 1856 — Maximum Subarray Min-Product</h1>
+  <span class="badge hard">Hard</span>
+  <span class="badge time-badge">Time O(n)</span>
+  <span class="badge space-badge">Space O(n)</span>
+</header>
+<div id="progress"><div id="progress-bar"></div></div>
+<main>
+  <div class="panel">
+    <div id="phase-pill" class="phase-pill"></div>
+    <div id="viz-content"></div>
+  </div>
+  <div class="panel">
+    <div class="code-block">
+      <span class="code-line" data-ln="1"><span class="kw">def</span> <span class="fn">maxSumMinProduct</span>(<span class="var">self</span>, <span class="var">nums</span>):</span>
+      <span class="code-line" data-ln="2">    <span class="var">MOD</span> = <span class="nu">10</span>**<span class="nu">9</span> + <span class="nu">7</span></span>
+      <span class="code-line" data-ln="3">    <span class="var">n</span> = <span class="fn">len</span>(<span class="var">nums</span>)</span>
+      <span class="code-line" data-ln="4">    <span class="var">prefix</span> = [<span class="nu">0</span>] * (<span class="var">n</span> + <span class="nu">1</span>)</span>
+      <span class="code-line" data-ln="5">    <span class="kw">for</span> <span class="var">i</span> <span class="kw">in</span> <span class="fn">range</span>(<span class="var">n</span>):</span>
+      <span class="code-line" data-ln="6">        <span class="var">prefix</span>[<span class="var">i</span>+<span class="nu">1</span>] = <span class="var">prefix</span>[<span class="var">i</span>] + <span class="var">nums</span>[<span class="var">i</span>]</span>
+      <span class="code-line" data-ln="7">    <span class="var">stack</span>, <span class="var">ans</span> = [], <span class="nu">0</span></span>
+      <span class="code-line" data-ln="8">    <span class="kw">for</span> <span class="var">i</span> <span class="kw">in</span> <span class="fn">range</span>(<span class="var">n</span>):</span>
+      <span class="code-line" data-ln="9">        <span class="kw">while</span> <span class="var">stack</span> <span class="kw">and</span> <span class="var">nums</span>[<span class="var">stack</span>[-<span class="nu">1</span>]] &gt; <span class="var">nums</span>[<span class="var">i</span>]:</span>
+      <span class="code-line" data-ln="10">            <span class="var">idx</span> = <span class="var">stack</span>.<span class="fn">pop</span>()</span>
+      <span class="code-line" data-ln="11">            <span class="var">left</span> = <span class="var">stack</span>[-<span class="nu">1</span>] + <span class="nu">1</span> <span class="kw">if</span> <span class="var">stack</span> <span class="kw">else</span> <span class="nu">0</span></span>
+      <span class="code-line" data-ln="12">            <span class="var">s</span> = <span class="var">prefix</span>[<span class="var">i</span>] - <span class="var">prefix</span>[<span class="var">left</span>]</span>
+      <span class="code-line" data-ln="13">            <span class="var">ans</span> = <span class="fn">max</span>(<span class="var">ans</span>, <span class="var">nums</span>[<span class="var">idx</span>] * <span class="var">s</span>)</span>
+      <span class="code-line" data-ln="14">        <span class="var">stack</span>.<span class="fn">append</span>(<span class="var">i</span>)</span>
+      <span class="code-line" data-ln="15">    <span class="kw">while</span> <span class="var">stack</span>:  <span class="cm"># cleanup</span></span>
+      <span class="code-line" data-ln="16">        <span class="var">idx</span> = <span class="var">stack</span>.<span class="fn">pop</span>()</span>
+      <span class="code-line" data-ln="17">        <span class="var">left</span> = <span class="var">stack</span>[-<span class="nu">1</span>] + <span class="nu">1</span> <span class="kw">if</span> <span class="var">stack</span> <span class="kw">else</span> <span class="nu">0</span></span>
+      <span class="code-line" data-ln="18">        <span class="var">s</span> = <span class="var">prefix</span>[<span class="var">n</span>] - <span class="var">prefix</span>[<span class="var">left</span>]</span>
+      <span class="code-line" data-ln="19">        <span class="var">ans</span> = <span class="fn">max</span>(<span class="var">ans</span>, <span class="var">nums</span>[<span class="var">idx</span>] * <span class="var">s</span>)</span>
+      <span class="code-line" data-ln="20">    <span class="kw">return</span> <span class="var">ans</span> % <span class="var">MOD</span></span>
+    </div>
+    <div class="vars-grid" id="vars-grid"></div>
+  </div>
+</main>
+<footer>
+  <button class="btn" id="btn-prev" onclick="go(-1)">← Prev</button>
+  <div id="explain"></div>
+  <span id="step-counter"></span>
+  <button class="btn" id="btn-next" onclick="go(1)">Next →</button>
+</footer>
+<div class="key-hint">keyboard: ← → arrow keys</div>
+<script>
+// nums = [1, 2, 3, 2]
+// prefix = [0, 1, 3, 6, 8]
+// For each element as minimum, find the largest subarray where it IS the minimum
+// using monotonic stack to find left/right boundaries
+// answer = 14  (subarray [2,3,2], min=2, sum=7, product=14)
+
+const NUMS = [1,2,3,2];
+const PREFIX = [0,1,3,6,8];
+
+const STEPS = [
+  {
+    phase: 'Step 1 — Problem Setup  (line 1)',
+    ln: 1,
+    cells: NUMS.map(v => ({ v, cls:'normal' })),
+    prefix: PREFIX.map(v => ({ v, active:false })),
+    stack: [], ans: 0, ansUpdated: false,
+    action:'none', actionLabel:'', rangeNote: null,
+    changes: [],
+    vars: { nums:'[1,2,3,2]', ans:'0', stack:'[]' },
+    explain: 'Min-product of a subarray = (minimum value in subarray) × (sum of subarray). Find the maximum over ALL subarrays. Key insight: for each element, find the longest subarray where it IS the minimum — that gives the maximum possible sum for that minimum value. We use a monotonic stack to find those boundaries in O(n).'
+  },
+  {
+    phase: 'Step 2 — Build prefix sums  (lines 4–6)',
+    ln: 6,
+    cells: NUMS.map(v => ({ v, cls:'normal' })),
+    prefix: PREFIX.map(v => ({ v, active:true })),
+    stack: [], ans: 0, ansUpdated: false,
+    action:'none', actionLabel:'prefix = [0,1,3,6,8]', rangeNote: null,
+    changes: [{ code:'prefix[i+1] = prefix[i] + nums[i]', was:'prefix  →  [0,0,0,0,0]', now:'prefix  →  [0,1,3,6,8]', why:'prefix[i] = sum of nums[0..i-1]. With prefix sums, sum(nums[L..R]) = prefix[R+1] − prefix[L] in O(1). We need this to compute subarray sums instantly during stack pops.' }],
+    vars: { prefix:'[0,1,3,6,8]', stack:'[]', ans:'0' },
+    explain: 'Build prefix sums. prefix[0]=0, prefix[1]=1, prefix[2]=3, prefix[3]=6, prefix[4]=8. Now any subarray sum nums[L..R] = prefix[R+1] − prefix[L]. This converts O(n) range sum queries to O(1).'
+  },
+  {
+    phase: 'Step 3 — i=0, val=1: push (monotonic stack grows)  (lines 8–9,14)',
+    ln: 14,
+    cells: NUMS.map((v,i) => ({ v, cls: i===0?'curr':'normal' })),
+    prefix: PREFIX.map(v => ({ v, active:false })),
+    stack: [{ idx:0, val:1, cls:'push' }], ans: 0, ansUpdated: false,
+    action:'push', actionLabel:'stack.append(0)  →  [0]', rangeNote: null,
+    changes: [{ code:'stack.append(0)', was:'stack  →  []', now:'stack  →  [0]', why:'Stack empty — while loop skipped. Push index 0. The stack stores indices whose values are in increasing order (monotonic increasing). Each index waits to find where it stops being the minimum.' }],
+    vars: { i:'0', 'nums[i]':'1', stack:'[0]', ans:'0' },
+    explain: 'i=0, nums[0]=1. Stack is empty, while skipped. Push index 0. Stack = [0]. We are building a monotonic increasing stack of indices — elements increase from bottom to top (by value).'
+  },
+  {
+    phase: 'Step 4 — i=1, val=2 > 1: push  (lines 8–9,14)',
+    ln: 14,
+    cells: NUMS.map((v,i) => ({ v, cls: i===1?'curr': i===0?'stack':'normal' })),
+    prefix: PREFIX.map(v => ({ v, active:false })),
+    stack: [{ idx:0, val:1, cls:'normal' }, { idx:1, val:2, cls:'push' }], ans: 0, ansUpdated: false,
+    action:'push', actionLabel:'stack.append(1)  →  [0, 1]', rangeNote: null,
+    changes: [{ code:'stack.append(1)', was:'stack  →  [0]', now:'stack  →  [0, 1]', why:'nums[1]=2 > nums[stack[-1]]=1. While condition false — no pop. Push index 1. Stack stays monotonically increasing.' }],
+    vars: { i:'1', 'nums[i]':'2', stack:'[0, 1]', ans:'0' },
+    explain: 'i=1, nums[1]=2. While condition: nums[stack[-1]]=1 < 2 — already smaller, so no pop needed. Push index 1. Stack = [0,1] with values [1,2].'
+  },
+  {
+    phase: 'Step 5 — i=2, val=3 > 2: push  (lines 8–9,14)',
+    ln: 14,
+    cells: NUMS.map((v,i) => ({ v, cls: i===2?'curr': (i<2)?'stack':'normal' })),
+    prefix: PREFIX.map(v => ({ v, active:false })),
+    stack: [{ idx:0, val:1, cls:'normal' }, { idx:1, val:2, cls:'normal' }, { idx:2, val:3, cls:'push' }], ans: 0, ansUpdated: false,
+    action:'push', actionLabel:'stack.append(2)  →  [0, 1, 2]', rangeNote: null,
+    changes: [{ code:'stack.append(2)', was:'stack  →  [0, 1]', now:'stack  →  [0, 1, 2]', why:'nums[2]=3 > nums[stack[-1]]=2. No pop. Push index 2. Stack = [0,1,2] with values [1,2,3].' }],
+    vars: { i:'2', 'nums[i]':'3', stack:'[0, 1, 2]', ans:'0' },
+    explain: 'i=2, nums[2]=3. No element needs popping — 3 is bigger than everything in the stack. Push index 2. Stack = [0,1,2]. Values monotonically increasing: [1,2,3].'
+  },
+  {
+    phase: 'Step 6 — i=3, val=2 < 3: POP idx=2 (val=3)  (lines 9–13)',
+    ln: 13,
+    cells: NUMS.map((v,i) => ({ v, cls: i===3?'curr': i===2?'pop': (i===0||i===1)?'stack':'normal' })),
+    prefix: PREFIX.map(v => ({ v, active:false })),
+    stack: [{ idx:0, val:1, cls:'normal' }, { idx:1, val:2, cls:'normal' }], ans: 9, ansUpdated: true,
+    action:'max', actionLabel: 'pop idx=2 (val=3): left=2, sum=prefix[3]−prefix[2]=3, product=3×3=9',
+    rangeNote: { left:2, right:2, minVal:3, sum:3, product:9 },
+    changes: [
+      { code:'idx = stack.pop()  →  idx=2', was:'stack  →  [0,1,2]', now:'stack  →  [0,1]', why:'nums[stack[-1]]=3 > nums[i]=2. Pop index 2. nums[2]=3 is no longer the minimum for subarrays extending to index 3.' },
+      { code:'left = stack[-1]+1 = 1+1 = 2', was:'left boundary  →  ?', now:'left boundary  →  2', why:'The new stack top is index 1. So left=1+1=2 — the subarray where 3 is the minimum starts at index 2.' },
+      { code:'s = prefix[3] − prefix[2] = 3', was:'sum  →  ?', now:'sum  →  3  (subarray [3])', why:'right boundary = i−1 = 2 (current i=3 is smaller, not included). Sum of nums[2..2] = prefix[3]−prefix[2] = 6−3 = 3.' },
+      { code:'ans = max(0, 3×3) = 9', was:'ans  →  0', now:'ans  →  9', why:'min-product = nums[2] × sum = 3 × 3 = 9. New maximum.' }
+    ],
+    vars: { i:'3', 'nums[i]':'2', 'idx (popped)':'2', left:'2', s:'3', ans:'9' },
+    explain: 'OPERATION ↷: nums[3]=2 < nums[stack[-1]]=3. Pop index 2. Left boundary = stack[-1]+1 = 2. Right boundary = i−1 = 2. Sum = nums[2..2] = 3. Product = 3×3 = 9. ans=9. Now check again: nums[stack[-1]]=2 == nums[i]=2, while stops.'
+  },
+  {
+    phase: 'Step 7 — push index 3  (line 14)',
+    ln: 14,
+    cells: NUMS.map((v,i) => ({ v, cls: i===3?'curr': (i===0||i===1)?'stack': i===2?'normal':'normal' })),
+    prefix: PREFIX.map(v => ({ v, active:false })),
+    stack: [{ idx:0, val:1, cls:'normal' }, { idx:1, val:2, cls:'normal' }, { idx:3, val:2, cls:'push' }], ans: 9, ansUpdated: false,
+    action:'push', actionLabel:'stack.append(3)  →  [0, 1, 3]', rangeNote: null,
+    changes: [{ code:'stack.append(3)', was:'stack  →  [0, 1]', now:'stack  →  [0, 1, 3]', why:'nums[3]=2 is NOT > nums[stack[-1]]=2 (equal, not strictly greater). While exits. Push index 3. Main loop done — now begin cleanup.' }],
+    vars: { i:'3', 'nums[i]':'2', stack:'[0, 1, 3]', ans:'9' },
+    explain: 'While condition requires strictly greater. nums[stack[-1]]=2 is NOT > nums[3]=2, so while exits. Push index 3. Main for loop ends. Stack = [0,1,3] — three indices still waiting for their right boundary. Cleanup loop starts now.'
+  },
+  {
+    phase: 'Step 8 — CLEANUP: pop idx=3 (val=2)  (lines 15–19)',
+    ln: 19,
+    cells: NUMS.map((v,i) => ({ v, cls: i===3?'pop': (i===0||i===1)?'stack': i===2?'range':'normal' })),
+    prefix: PREFIX.map(v => ({ v, active:false })),
+    stack: [{ idx:0, val:1, cls:'normal' }, { idx:1, val:2, cls:'normal' }], ans: 10, ansUpdated: true,
+    action:'max', actionLabel:'pop idx=3 (val=2): left=2, sum=prefix[4]−prefix[2]=5, product=2×5=10',
+    rangeNote: { left:2, right:3, minVal:2, sum:5, product:10 },
+    changes: [
+      { code:'left = stack[-1]+1 = 1+1 = 2', was:'left boundary  →  ?', now:'left boundary  →  2', why:'stack[-1]=1 before pop. left=2. Right boundary in cleanup is always n−1=3 (no smaller element found to the right).' },
+      { code:'s = prefix[4] − prefix[2] = 5', was:'sum  →  ?', now:'sum  →  5  (subarray [3,2])', why:'Cleanup right boundary = n−1 = 3. Sum of nums[2..3] = prefix[4]−prefix[2] = 8−3 = 5.' },
+      { code:'ans = max(9, 2×5) = 10', was:'ans  →  9', now:'ans  →  10', why:'nums[3]=2 × sum=5 = 10. New max.' }
+    ],
+    vars: { 'idx (popped)':'3', left:'2', s:'5', 'nums[idx]':'2', product:'10', ans:'10' },
+    explain: 'CLEANUP ↷: pop index 3 (val=2). Right boundary = n−1=3 (cleanup always uses end of array). left=2. Sum = prefix[4]−prefix[2] = 5. Product = 2×5 = 10. ans=10.'
+  },
+  {
+    phase: 'Step 9 — CLEANUP: pop idx=1 (val=2) — NEW MAXIMUM  (lines 15–19)',
+    ln: 19,
+    cells: NUMS.map((v,i) => ({ v, cls: i===1?'pop': i===0?'stack': (i===2||i===3)?'range':'normal' })),
+    prefix: PREFIX.map(v => ({ v, active:false })),
+    stack: [{ idx:0, val:1, cls:'normal' }], ans: 14, ansUpdated: true,
+    action:'max', actionLabel:'pop idx=1 (val=2): left=1, sum=prefix[4]−prefix[1]=7, product=2×7=14 ← NEW MAX',
+    rangeNote: { left:1, right:3, minVal:2, sum:7, product:14 },
+    changes: [
+      { code:'left = stack[-1]+1 = 0+1 = 1', was:'left boundary  →  ?', now:'left boundary  →  1', why:'stack[-1]=0 before pop. left=1. The subarray where val=2 is the minimum spans from index 1 to 3.' },
+      { code:'s = prefix[4] − prefix[1] = 7', was:'sum  →  ?', now:'sum  →  7  (subarray [2,3,2])', why:'Sum of nums[1..3] = prefix[4]−prefix[1] = 8−1 = 7. The subarray [2,3,2] has sum 7.' },
+      { code:'ans = max(10, 2×7) = 14', was:'ans  →  10', now:'ans  →  14', why:'nums[1]=2 × sum=7 = 14. This is the overall maximum. Subarray [2,3,2]: min=2, sum=7, product=14.' }
+    ],
+    vars: { 'idx (popped)':'1', left:'1', s:'7', 'nums[idx]':'2', product:'14', ans:'14' },
+    explain: 'CLEANUP ↷: pop index 1 (val=2). left=1 (stack[-1]=0 → left=0+1=1). Sum = prefix[4]−prefix[1] = 7. Product = 2×7 = 14. This is the NEW MAXIMUM. Subarray [2,3,2] has minimum 2 and sum 7.'
+  },
+  {
+    phase: 'Step 10 — CLEANUP: pop idx=0 (val=1)  (lines 15–19)',
+    ln: 19,
+    cells: NUMS.map((v,i) => ({ v, cls: i===0?'pop': 'range' })),
+    prefix: PREFIX.map(v => ({ v, active:false })),
+    stack: [], ans: 14, ansUpdated: false,
+    action:'none', actionLabel:'pop idx=0 (val=1): product=1×8=8 < 14, ans unchanged',
+    rangeNote: { left:0, right:3, minVal:1, sum:8, product:8 },
+    changes: [
+      { code:'s = prefix[4] − prefix[0] = 8', was:'sum  →  ?', now:'sum  →  8  (entire array)', why:'Stack empty after pop → left=0. Sum = prefix[4]−prefix[0] = 8. Entire array [1,2,3,2].' },
+      { code:'ans = max(14, 1×8) = 14', was:'ans  →  14', now:'ans  →  14  (unchanged)', why:'nums[0]=1 × 8 = 8 < 14. ans stays at 14. Having min=1 over the whole array is less profitable than min=2 over [2,3,2].' }
+    ],
+    vars: { 'idx (popped)':'0', left:'0', s:'8', 'nums[idx]':'1', product:'8', ans:'14' },
+    explain: 'CLEANUP: pop index 0 (val=1). Stack now empty → left=0. Sum = entire array = 8. Product = 1×8 = 8 < 14. ans stays 14. Stack is now empty — cleanup done.'
+  },
+  {
+    phase: 'Step 11 — Result: ans % MOD = 14  (line 20)',
+    ln: 20,
+    cells: NUMS.map(v => ({ v, cls:'result' })),
+    prefix: PREFIX.map(v => ({ v, active:false })),
+    stack: [], ans: 14, ansUpdated: true,
+    action:'result', actionLabel:'return 14 % (10^9+7) = 14', rangeNote: null,
+    changes: [],
+    vars: { ans:'14', result:'14' },
+    explain: 'Return ans % MOD = 14. The winning subarray is [2,3,2] (indices 1–3): min=2, sum=7, product=14. Each index is pushed and popped at most once → O(n). Prefix sums give O(1) range queries. Total: O(n) time, O(n) space.'
+  }
+];
+
+let cur = 0;
+
+function render() {
+  const s = STEPS[cur];
+  document.getElementById('phase-pill').textContent = s.phase;
+  let html = '';
+
+  // nums array
+  html += `<div class="sec-label">nums[]</div><div class="arr-strip">`;
+  s.cells.forEach((c,i) => {
+    const cls = {curr:'t-curr',stack:'t-stack',pop:'t-pop',range:'t-range',result:'t-result',normal:'t-normal'}[c.cls]||'';
+    html += `<div class="arr-cell"><div class="arr-val ${cls}">${c.v}</div><div class="arr-idx">[${i}]</div></div>`;
+  });
+  html += '</div>';
+
+  // prefix array
+  html += `<div class="sec-label">prefix[] — prefix[i] = sum of nums[0..i-1]</div><div class="arr-strip">`;
+  s.prefix.forEach((p,i) => {
+    const cls = p.active ? 'active' : '';
+    html += `<div class="arr-cell"><div class="prefix-val ${cls}">${p.v}</div><div class="arr-idx">[${i}]</div></div>`;
+  });
+  html += '</div>';
+
+  // max tracker
+  if (s.ans > 0 || s.action === 'result') {
+    const upd = s.ansUpdated ? ' updated' : '';
+    html += `<div class="max-tracker${upd}"><div><div class="max-label">Current max ans</div><div class="max-val">${s.ans}</div></div>`;
+    if (s.rangeNote) {
+      const rn = s.rangeNote;
+      html += `<div><div class="max-label">This step</div><div class="max-sub">min=${rn.minVal} × sum(${rn.left}..${rn.right})=${rn.sum} = ${rn.product}</div></div>`;
+    }
+    html += '</div>';
+  }
+
+  if (s.action !== 'none') {
+    const cls = {push:'act-push',pop:'act-pop',max:'act-max',result:'act-result'}[s.action]||'act-none';
+    const icon = {push:'↑',pop:'↓',max:'★',result:'✓'}[s.action]||'';
+    html += `<div class="action-row"><span class="action-badge ${cls}">${icon}&nbsp;&nbsp;${s.actionLabel}</span></div>`;
+  }
+
+  html += `<div class="stack-label">Stack — monotonic increasing indices (top → bottom)</div><div class="stack-container">`;
+  if (s.stack.length === 0) {
+    html += '<span class="stack-empty">[ empty ]</span>';
+  } else {
+    for (let i = s.stack.length-1; i >= 0; i--) {
+      const item = s.stack[i];
+      const isTop = i === s.stack.length-1;
+      const cls = item.cls==='push'?'t-push': item.cls==='pop'?'t-pop':'';
+      const tag = item.cls==='push' ? '<span class="stack-tag tag-push">pushed</span>'
+                : isTop ? '<span class="stack-tag tag-top">top</span>' : '';
+      html += `<div class="stack-item ${cls}">index ${item.idx} &nbsp;(val=${item.val})${tag}</div>`;
+    }
+  }
+  html += '</div>';
+
+  if (s.action === 'result') {
+    html += `<div class="result-box">✓ &nbsp; 14 &nbsp;(subarray [2,3,2]: min=2, sum=7)</div>`;
+  }
+
+  if (!s.changes || s.changes.length === 0) {
+    html += `<div class="changes-panel"><div class="changes-title">↷ STACK OPERATIONS THIS STEP</div><div class="no-change">No stack mutation this step.</div></div>`;
+  } else {
+    const rows = s.changes.map(c => `<div class="change-row">
+      <div class="change-code">${c.code}</div>
+      <div class="change-was">was: <span>${c.was}</span></div>
+      <div class="change-now">now: <span>${c.now}</span></div>
+      <div class="change-why">${c.why}</div>
+    </div>`).join('');
+    html += `<div class="changes-panel"><div class="changes-title">↷ STACK OPERATION THIS STEP</div>${rows}</div>`;
+  }
+
+  html += `<div class="legend">
+    <div class="legend-item"><div class="leg-dot" style="background:#12261e;border:1px solid #238636"></div>Current</div>
+    <div class="legend-item"><div class="leg-dot" style="background:#0c1f3d;border:1px solid #1f6feb"></div>In stack</div>
+    <div class="legend-item"><div class="leg-dot" style="background:#2d1317;border:1px solid #da3633"></div>Being popped</div>
+    <div class="legend-item"><div class="leg-dot" style="background:#2d1a00;border:1px solid #ffa657"></div>In computed range</div>
+    <div class="legend-item"><div class="leg-dot" style="background:#1b1327;border:1px solid #8957e5"></div>Result</div>
+  </div>`;
+
+  document.getElementById('viz-content').innerHTML = html;
+  document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active'));
+  const active = document.querySelector(`.code-line[data-ln="${s.ln}"]`);
+  if (active) active.classList.add('active');
+  document.getElementById('vars-grid').innerHTML = Object.entries(s.vars).map(([k,v]) =>
+    `<div class="var-cell"><div class="var-name">${k}</div><div class="var-val">${v}</div></div>`).join('');
+  document.getElementById('explain').textContent = s.explain;
+  document.getElementById('step-counter').textContent = `${cur+1} / ${STEPS.length}`;
+  document.getElementById('progress-bar').style.width = ((cur+1)/STEPS.length*100)+'%';
+  document.getElementById('btn-prev').disabled = cur===0;
+  document.getElementById('btn-next').disabled = cur===STEPS.length-1;
+}
+
+function go(dir) {
+  const next = cur+dir;
+  if (next>=0 && next<STEPS.length) { cur=next; render(); }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key==='ArrowRight'||e.key==='ArrowDown') go(1);
+  if (e.key==='ArrowLeft' ||e.key==='ArrowUp')   go(-1);
+});
+
+render();
+</script>
+</body>
+</html>

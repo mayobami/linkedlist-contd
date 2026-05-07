@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LC 853 — Car Fleet</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0d1117; color: #c9d1d9; font-family: 'Consolas','Monaco',monospace; min-height: 100vh; display: flex; flex-direction: column; }
+header { padding: 16px 28px; border-bottom: 1px solid #30363d; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+header h1 { font-size: 1.15rem; color: #e6edf3; }
+.badge { padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+.medium { background: #3d2b00; color: #ffa657; }
+.time-badge { background: #0c1f3d; color: #58a6ff; }
+.space-badge { background: #1b1327; color: #d2a8ff; }
+#progress { height: 3px; background: #21262d; flex-shrink: 0; }
+#progress-bar { height: 3px; background: #58a6ff; transition: width 0.25s; }
+main { display: grid; grid-template-columns: 1fr 1fr; flex: 1; min-height: 0; }
+.panel { border-right: 1px solid #30363d; padding: 18px 22px; overflow-y: auto; }
+.panel:last-child { border-right: none; }
+.phase-pill { display: inline-block; background: #21262d; color: #58a6ff; border: 1px solid #30363d; border-radius: 20px; padding: 4px 14px; font-size: 0.78rem; margin-bottom: 14px; }
+.sec-label { font-size: 0.72rem; color: #6e7681; margin-bottom: 8px; letter-spacing: 0.03em; }
+.cars-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-bottom: 14px; }
+.cars-table th { background: #161b22; color: #6e7681; font-size: 0.7rem; padding: 6px 10px; border: 1px solid #30363d; text-align: center; font-weight: 600; }
+.cars-table td { padding: 7px 10px; border: 1px solid #21262d; text-align: center; background: #0d1117; color: #8b949e; }
+.cars-table tr.t-curr td { background: #12261e; color: #56d364; border-color: #238636; font-weight: 700; }
+.cars-table tr.t-done td { background: #0d1117; color: #484f58; }
+.cars-table tr.t-fleet td { background: #1b1327; color: #d2a8ff; border-color: #8957e5; }
+.cars-table tr.t-merge td { background: #2d1a00; color: #ffa657; border-color: #ffa657; }
+.fleet-tag { font-size: 0.63rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; margin-left: 6px; }
+.tag-new   { background: #238636; color: #fff; }
+.tag-merge { background: #ffa657; color: #000; }
+.action-row { margin: 8px 0 12px; }
+.action-badge { display: inline-flex; align-items: center; gap: 8px; padding: 5px 16px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; }
+.act-push   { background: #0d2b0d; color: #56d364; border: 1px solid #238636; }
+.act-merge  { background: #2d1a00; color: #ffa657; border: 1px solid #ffa657; }
+.act-result { background: #1b1327; color: #d2a8ff; border: 1px solid #8957e5; }
+.act-none   { background: #161b22; color: #8b949e; border: 1px solid #30363d; }
+.stack-label { font-size: 0.72rem; color: #6e7681; margin-bottom: 8px; }
+.stack-container { display: flex; flex-direction: column; gap: 6px; min-height: 28px; margin-bottom: 14px; }
+.stack-empty { font-size: 0.82rem; color: #484f58; font-style: italic; }
+.stack-item { padding: 7px 14px; border: 1px solid #30363d; border-radius: 6px; font-size: 0.85rem; background: #161b22; color: #c9d1d9; display: flex; align-items: center; justify-content: space-between; }
+.stack-item.t-push  { border-color: #238636; background: #12261e; color: #56d364; box-shadow: 0 0 8px #23863640; }
+.stack-tag { font-size: 0.63rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; margin-left: 8px; }
+.tag-push { background: #238636; color: #fff; }
+.tag-top  { background: #1f6feb; color: #fff; }
+.merge-note { background: #2d1a00; border: 1px solid #ffa657; border-radius: 8px; padding: 10px 14px; margin: 8px 0 12px; font-size: 0.8rem; }
+.merge-title { color: #ffa657; font-weight: 700; margin-bottom: 4px; }
+.merge-body  { color: #8b949e; }
+.changes-panel { border: 1px solid #30363d; border-radius: 8px; padding: 12px 16px; margin-top: 10px; background: #0d1117; }
+.changes-title { font-size: 0.7rem; color: #8b949e; font-weight: 600; margin-bottom: 8px; letter-spacing: 0.05em; }
+.no-change { font-size: 0.8rem; color: #484f58; font-style: italic; }
+.change-row { border-left: 3px solid #ffa657; padding-left: 10px; margin-bottom: 10px; }
+.change-row:last-child { margin-bottom: 0; }
+.change-code { font-size: 0.82rem; color: #ffa657; font-weight: 700; margin-bottom: 3px; }
+.change-was  { font-size: 0.77rem; color: #8b949e; }
+.change-was span { text-decoration: line-through; color: #da3633; }
+.change-now  { font-size: 0.77rem; color: #8b949e; }
+.change-now span { color: #56d364; font-weight: 700; }
+.change-why  { font-size: 0.77rem; color: #6e7681; margin-top: 3px; font-style: italic; }
+.result-box { margin-top: 12px; padding: 12px 18px; background: #1b1327; border: 2px solid #8957e5; border-radius: 8px; text-align: center; color: #d2a8ff; font-size: 1rem; font-weight: 700; }
+.legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #21262d; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.7rem; color: #8b949e; }
+.leg-dot { width: 13px; height: 13px; border-radius: 3px; flex-shrink: 0; }
+.code-block { background: #0d1117; border: 1px solid #21262d; border-radius: 8px; padding: 14px; font-size: 0.83rem; line-height: 1.85; overflow-x: auto; margin-bottom: 14px; }
+.code-line { display: block; padding: 1px 6px; border-radius: 4px; }
+.code-line.active { background: #1f2d1f; border-left: 3px solid #56d364; margin-left: -6px; padding-left: 3px; }
+.kw { color: #ff7b72; } .fn { color: #d2a8ff; } .cm { color: #8b949e; font-style: italic; } .nu { color: #79c0ff; } .var { color: #e6edf3; }
+.vars-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; margin-bottom: 14px; }
+.var-cell { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 8px 12px; }
+.var-name { font-size: 0.67rem; color: #6e7681; margin-bottom: 2px; }
+.var-val  { font-size: 0.82rem; color: #e6edf3; font-weight: 600; word-break: break-all; }
+footer { border-top: 1px solid #30363d; padding: 10px 28px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+.btn { background: #21262d; border: 1px solid #30363d; color: #c9d1d9; padding: 6px 20px; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 0.85rem; }
+.btn:hover:not(:disabled) { background: #30363d; }
+.btn:disabled { opacity: 0.35; cursor: default; }
+#explain { flex: 1; font-size: 0.82rem; color: #8b949e; line-height: 1.5; }
+#step-counter { font-size: 0.78rem; color: #6e7681; white-space: nowrap; }
+.key-hint { text-align: center; font-size: 0.67rem; color: #484f58; padding: 4px; border-top: 1px solid #21262d; flex-shrink: 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>LC 853 — Car Fleet</h1>
+  <span class="badge medium">Medium</span>
+  <span class="badge time-badge">Time O(n log n)</span>
+  <span class="badge space-badge">Space O(n)</span>
+</header>
+<div id="progress"><div id="progress-bar"></div></div>
+<main>
+  <div class="panel">
+    <div id="phase-pill" class="phase-pill"></div>
+    <div id="viz-content"></div>
+  </div>
+  <div class="panel">
+    <div class="code-block">
+      <span class="code-line" data-ln="1"><span class="kw">def</span> <span class="fn">carFleet</span>(<span class="var">self</span>, <span class="var">target</span>, <span class="var">position</span>, <span class="var">speed</span>):</span>
+      <span class="code-line" data-ln="2">    <span class="var">pairs</span> = <span class="fn">sorted</span>(<span class="fn">zip</span>(<span class="var">position</span>, <span class="var">speed</span>), <span class="var">reverse</span>=<span class="kw">True</span>)</span>
+      <span class="code-line" data-ln="3">    <span class="var">stack</span> = []  <span class="cm"># fleet finish times</span></span>
+      <span class="code-line" data-ln="4">    <span class="kw">for</span> <span class="var">pos</span>, <span class="var">spd</span> <span class="kw">in</span> <span class="var">pairs</span>:</span>
+      <span class="code-line" data-ln="5">        <span class="var">t</span> = (<span class="var">target</span> - <span class="var">pos</span>) / <span class="var">spd</span></span>
+      <span class="code-line" data-ln="6">        <span class="kw">if not</span> <span class="var">stack</span> <span class="kw">or</span> <span class="var">t</span> &gt; <span class="var">stack</span>[-<span class="nu">1</span>]:</span>
+      <span class="code-line" data-ln="7">            <span class="var">stack</span>.<span class="fn">append</span>(<span class="var">t</span>)</span>
+      <span class="code-line" data-ln="8">    <span class="kw">return</span> <span class="fn">len</span>(<span class="var">stack</span>)</span>
+    </div>
+    <div class="vars-grid" id="vars-grid"></div>
+  </div>
+</main>
+<footer>
+  <button class="btn" id="btn-prev" onclick="go(-1)">← Prev</button>
+  <div id="explain"></div>
+  <span id="step-counter"></span>
+  <button class="btn" id="btn-next" onclick="go(1)">Next →</button>
+</footer>
+<div class="key-hint">keyboard: ← → arrow keys</div>
+<script>
+// target=12, position=[10,8,0,5,3], speed=[2,4,1,1,3]
+// sorted by position desc: [(10,2),(8,4),(5,1),(3,3),(0,1)]
+// times: 1.0, 1.0, 7.0, 3.0, 12.0
+// result = 3
+
+const TARGET = 12;
+const SORTED = [
+  { pos:10, spd:2, t:1.0 },
+  { pos:8,  spd:4, t:1.0 },
+  { pos:5,  spd:1, t:7.0 },
+  { pos:3,  spd:3, t:3.0 },
+  { pos:0,  spd:1, t:12.0 }
+];
+
+const STEPS = [
+  {
+    phase: 'Step 1 — Problem Setup  (line 1)',
+    ln: 1,
+    rows: SORTED.map(r => ({ ...r, cls: 'normal' })),
+    stack: [], action: 'none', actionLabel: '', note: null,
+    changes: [],
+    vars: { target:'12', pos:'—', spd:'—', t:'—', stack:'[]' },
+    explain: 'target=12, position=[10,8,0,5,3], speed=[2,4,1,1,3]. Key insight: a faster car behind a slower one will catch up and form a fleet — they arrive together. We need to count how many distinct groups (fleets) reach the target. We process cars from front to back (closest to target first).'
+  },
+  {
+    phase: 'Step 2 — Sort by position descending  (line 2)',
+    ln: 2,
+    rows: SORTED.map(r => ({ ...r, cls: 'normal' })),
+    stack: [], action: 'none', actionLabel: 'sorted pairs: [(10,2),(8,4),(5,1),(3,3),(0,1)]', note: null,
+    changes: [{ code:'pairs = sorted(zip(position, speed), reverse=True)', was:'unsorted: [10,8,0,5,3]', now:'sorted front→back: [10,8,5,3,0]', why:'Process cars from closest to farthest. A car cannot pass the one in front — so we check if the car behind arrives before or after the current fleet leader.' }],
+    vars: { target:'12', pairs:'[(10,2),(8,4),(5,1),(3,3),(0,1)]', stack:'[]' },
+    explain: 'Sort all cars by position in descending order (closest to target first). This is crucial: we process from front to back so we always know the "leading fleet time" when checking each car behind it.'
+  },
+  {
+    phase: 'Step 3 — (pos=10, spd=2): t=1.0, stack empty → new fleet  (lines 4–7)',
+    ln: 7,
+    rows: SORTED.map((r,i) => ({ ...r, cls: i===0?'curr':'normal' })),
+    stack: [{ t:1.0, cls:'push' }], action: 'push', actionLabel: 'stack.append(1.0) — new fleet', note: null,
+    changes: [{ code:'stack.append(t)', was:'stack  →  []', now:'stack  →  [1.0]', why:'(12−10)/2 = 1.0 hours to target. Stack empty — no fleet ahead to compare with. This car starts the first fleet.' }],
+    vars: { pos:'10', spd:'2', t:'1.0', stack:'[1.0]' },
+    explain: 'Car at position 10, speed 2. Time = (12−10)/2 = 1.0 hr. Stack is empty — unconditionally push. This is the leading car; it forms fleet #1 with finish time 1.0 hr.'
+  },
+  {
+    phase: 'Step 4 — (pos=8, spd=4): t=1.0 ≤ 1.0 → same fleet (merge)  (lines 4–6)',
+    ln: 6,
+    rows: SORTED.map((r,i) => ({ ...r, cls: i===1?'merge': i===0?'fleet':'normal' })),
+    stack: [{ t:1.0, cls:'normal' }], action: 'merge', actionLabel: 't=1.0 ≤ stack[-1]=1.0 → merges into fleet #1', note: { title:'Why merge?', body:'Car at pos=8, speed=4: t=(12−8)/4=1.0 hr — same arrival as the car ahead. It catches up before the target and joins fleet #1. When t ≤ stack[-1], do NOT push: the fleet size grows but the count stays the same.' },
+    changes: [],
+    vars: { pos:'8', spd:'4', t:'1.0', 'stack[-1]':'1.0', stack:'[1.0]' },
+    explain: 'Car at pos=8, speed=4. Time = (12−8)/4 = 1.0 hr. t=1.0 ≤ stack[-1]=1.0. This car catches up with fleet #1 — they arrive together. Do NOT push. Stack unchanged: still 1 fleet.'
+  },
+  {
+    phase: 'Step 5 — (pos=5, spd=1): t=7.0 > 1.0 → new fleet  (lines 4–7)',
+    ln: 7,
+    rows: SORTED.map((r,i) => ({ ...r, cls: i===2?'curr': i<2?'fleet':'normal' })),
+    stack: [{ t:1.0, cls:'normal' }, { t:7.0, cls:'push' }], action: 'push', actionLabel: 'stack.append(7.0) — new fleet', note: null,
+    changes: [{ code:'stack.append(t)', was:'stack  →  [1.0]', now:'stack  →  [1.0, 7.0]', why:'(12−5)/1=7.0 hr. 7.0 > 1.0 — this car is slower and farther back. It will NEVER catch the first fleet. A new fleet forms.' }],
+    vars: { pos:'5', spd:'1', t:'7.0', 'stack[-1]':'1.0', stack:'[1.0, 7.0]' },
+    explain: 'Car at pos=5, speed=1. Time = 7.0 hr. 7.0 > 1.0 (stack top). This car arrives much later than fleet #1 — it can never catch up. Push 7.0. Fleet #2 formed. Stack = [1.0, 7.0].'
+  },
+  {
+    phase: 'Step 6 — (pos=3, spd=3): t=3.0 ≤ 7.0 → same fleet (merge)  (lines 4–6)',
+    ln: 6,
+    rows: SORTED.map((r,i) => ({ ...r, cls: i===3?'merge': i<3?'fleet':'normal' })),
+    stack: [{ t:1.0, cls:'normal' }, { t:7.0, cls:'normal' }], action: 'merge', actionLabel: 't=3.0 ≤ stack[-1]=7.0 → merges into fleet #2', note: { title:'Why merge?', body:'Car at pos=3, speed=3: t=(12−3)/3=3.0 hr. 3.0 ≤ 7.0 — this car arrives BEFORE the car in front (7.0 hr). It will catch up with fleet #2 at the target. The fleet travels at the speed of the slowest car (pos=5, 1 mph). Do NOT push.' },
+    changes: [],
+    vars: { pos:'3', spd:'3', t:'3.0', 'stack[-1]':'7.0', stack:'[1.0, 7.0]' },
+    explain: 'Car at pos=3, speed=3. Time = (12−3)/3 = 3.0 hr. 3.0 ≤ 7.0 (stack top). Would arrive before the car directly ahead — catches up, joins fleet #2. Stack stays at 2 fleets.'
+  },
+  {
+    phase: 'Step 7 — (pos=0, spd=1): t=12.0 > 7.0 → new fleet  (lines 4–7)',
+    ln: 7,
+    rows: SORTED.map((r,i) => ({ ...r, cls: i===4?'curr': i<4?'fleet':'normal' })),
+    stack: [{ t:1.0, cls:'normal' }, { t:7.0, cls:'normal' }, { t:12.0, cls:'push' }], action: 'push', actionLabel: 'stack.append(12.0) — new fleet', note: null,
+    changes: [{ code:'stack.append(t)', was:'stack  →  [1.0, 7.0]', now:'stack  →  [1.0, 7.0, 12.0]', why:'(12−0)/1=12.0 hr. 12.0 > 7.0 — this car is the slowest and farthest back. It will never catch fleet #2. A third fleet forms.' }],
+    vars: { pos:'0', spd:'1', t:'12.0', 'stack[-1]':'7.0', stack:'[1.0, 7.0, 12.0]' },
+    explain: 'Car at pos=0, speed=1. Time = 12.0 hr. 12.0 > 7.0 — arrives too late to join fleet #2. Push 12.0. Fleet #3 formed. Stack = [1.0, 7.0, 12.0].'
+  },
+  {
+    phase: 'Step 8 — Result: len(stack) = 3  (line 8)',
+    ln: 8,
+    rows: SORTED.map(r => ({ ...r, cls: 'fleet' })),
+    stack: [{ t:1.0, cls:'normal' }, { t:7.0, cls:'normal' }, { t:12.0, cls:'normal' }], action: 'result', actionLabel: 'return len(stack) = 3', note: null,
+    changes: [],
+    vars: { stack:'[1.0, 7.0, 12.0]', result:'3' },
+    explain: 'Loop ends. Each element in the stack is one distinct fleet (identified by its arrival time). Stack size = 3 fleets. Fleet 1: cars at pos 10+8 (arrive at t=1.0). Fleet 2: cars at pos 5+3 (arrive at t=7.0). Fleet 3: car at pos 0 (arrives at t=12.0). Time O(n log n) for sort; O(n) for the loop. Space O(n).'
+  }
+];
+
+let cur = 0;
+
+function render() {
+  const s = STEPS[cur];
+  document.getElementById('phase-pill').textContent = s.phase;
+  let html = '';
+
+  html += `<div class="sec-label">Sorted cars — closest to target first  (target = ${TARGET})</div>`;
+  html += `<table class="cars-table"><thead><tr><th>#</th><th>pos</th><th>speed</th><th>time to target</th><th>status</th></tr></thead><tbody>`;
+  s.rows.forEach((r,i) => {
+    const clsMap = { curr:'t-curr', done:'t-done', fleet:'t-fleet', merge:'t-merge', normal:'' };
+    const cls = clsMap[r.cls]||'';
+    const status = r.cls==='curr' ? 'processing' : r.cls==='merge' ? 'merges ↷' : r.cls==='fleet' ? 'in fleet' : '—';
+    html += `<tr class="${cls}"><td>${i+1}</td><td>${r.pos}</td><td>${r.spd}</td><td>${r.t.toFixed(1)} hr</td><td>${status}</td></tr>`;
+  });
+  html += '</tbody></table>';
+
+  if (s.action !== 'none') {
+    const cls = { push:'act-push', merge:'act-merge', result:'act-result' }[s.action]||'act-none';
+    const icon = { push:'↑ new fleet', merge:'→ merge', result:'✓' }[s.action]||'';
+    html += `<div class="action-row"><span class="action-badge ${cls}">${icon}&nbsp;&nbsp;${s.actionLabel}</span></div>`;
+  }
+
+  if (s.note) {
+    html += `<div class="merge-note"><div class="merge-title">💡 ${s.note.title}</div><div class="merge-body">${s.note.body}</div></div>`;
+  }
+
+  html += `<div class="stack-label">Stack — one entry per distinct fleet (arrival time)</div><div class="stack-container">`;
+  if (s.stack.length === 0) {
+    html += '<span class="stack-empty">[ empty ]</span>';
+  } else {
+    for (let i = s.stack.length-1; i >= 0; i--) {
+      const item = s.stack[i];
+      const isTop = i === s.stack.length-1;
+      const cls = item.cls==='push' ? 't-push' : '';
+      const tag = item.cls==='push' ? `<span class="stack-tag tag-push">fleet #${s.stack.length}</span>`
+                : isTop ? '<span class="stack-tag tag-top">top</span>' : '';
+      html += `<div class="stack-item ${cls}">fleet arrives at ${item.t.toFixed(1)} hr${tag}</div>`;
+    }
+  }
+  html += '</div>';
+
+  if (s.action === 'result') {
+    html += `<div class="result-box">✓ &nbsp; 3 car fleets</div>`;
+  }
+
+  if (!s.changes || s.changes.length === 0) {
+    html += `<div class="changes-panel"><div class="changes-title">↷ STACK OPERATIONS THIS STEP</div><div class="no-change">No stack mutation this step.</div></div>`;
+  } else {
+    const rows2 = s.changes.map(c => `<div class="change-row">
+      <div class="change-code">${c.code}</div>
+      <div class="change-was">was: <span>${c.was}</span></div>
+      <div class="change-now">now: <span>${c.now}</span></div>
+      <div class="change-why">${c.why}</div>
+    </div>`).join('');
+    html += `<div class="changes-panel"><div class="changes-title">↷ STACK OPERATION THIS STEP</div>${rows2}</div>`;
+  }
+
+  html += `<div class="legend">
+    <div class="legend-item"><div class="leg-dot" style="background:#12261e;border:1px solid #238636"></div>Current car</div>
+    <div class="legend-item"><div class="leg-dot" style="background:#2d1a00;border:1px solid #ffa657"></div>Merges into fleet</div>
+    <div class="legend-item"><div class="leg-dot" style="background:#1b1327;border:1px solid #8957e5"></div>Confirmed fleet</div>
+  </div>`;
+
+  document.getElementById('viz-content').innerHTML = html;
+  document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active'));
+  const active = document.querySelector(`.code-line[data-ln="${s.ln}"]`);
+  if (active) active.classList.add('active');
+  document.getElementById('vars-grid').innerHTML = Object.entries(s.vars).map(([k,v]) =>
+    `<div class="var-cell"><div class="var-name">${k}</div><div class="var-val">${v}</div></div>`).join('');
+  document.getElementById('explain').textContent = s.explain;
+  document.getElementById('step-counter').textContent = `${cur+1} / ${STEPS.length}`;
+  document.getElementById('progress-bar').style.width = ((cur+1)/STEPS.length*100)+'%';
+  document.getElementById('btn-prev').disabled = cur===0;
+  document.getElementById('btn-next').disabled = cur===STEPS.length-1;
+}
+
+function go(dir) {
+  const next = cur+dir;
+  if (next>=0 && next<STEPS.length) { cur=next; render(); }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key==='ArrowRight'||e.key==='ArrowDown') go(1);
+  if (e.key==='ArrowLeft' ||e.key==='ArrowUp')   go(-1);
+});
+
+render();
+</script>
+</body>
+</html>
