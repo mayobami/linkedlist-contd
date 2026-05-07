@@ -102,17 +102,18 @@ footer { border-top: 1px solid #30363d; padding: 10px 28px; display: flex; align
       <span class="code-line" data-ln="1"><span class="kw">def</span> <span class="fn">asteroidCollision</span>(<span class="var">self</span>, <span class="var">asteroids</span>):</span>
       <span class="code-line" data-ln="2">    <span class="var">stack</span> = []</span>
       <span class="code-line" data-ln="3">    <span class="kw">for</span> <span class="var">a</span> <span class="kw">in</span> <span class="var">asteroids</span>:</span>
-      <span class="code-line" data-ln="4">        <span class="var">alive</span> = <span class="kw">True</span></span>
-      <span class="code-line" data-ln="5">        <span class="kw">while</span> <span class="var">alive</span> <span class="kw">and</span> <span class="var">stack</span> <span class="kw">and</span> <span class="var">a</span> &lt; <span class="nu">0</span> &lt; <span class="var">stack</span>[-<span class="nu">1</span>]:</span>
-      <span class="code-line" data-ln="6">            <span class="kw">if</span> <span class="var">stack</span>[-<span class="nu">1</span>] &lt; -<span class="var">a</span>:   <span class="cm"># top smaller → top destroyed</span></span>
+      <span class="code-line" data-ln="4">        <span class="kw">while</span> <span class="var">stack</span> <span class="kw">and</span> <span class="var">a</span> &lt; <span class="nu">0</span> <span class="kw">and</span> <span class="var">stack</span>[-<span class="nu">1</span>] &gt; <span class="nu">0</span>:</span>
+      <span class="code-line" data-ln="5">            <span class="var">diff</span> = <span class="var">a</span> + <span class="var">stack</span>[-<span class="nu">1</span>]</span>
+      <span class="code-line" data-ln="6">            <span class="kw">if</span> <span class="var">diff</span> &lt; <span class="nu">0</span>:     <span class="cm"># top smaller → top destroyed</span></span>
       <span class="code-line" data-ln="7">                <span class="var">stack</span>.<span class="fn">pop</span>()</span>
-      <span class="code-line" data-ln="8">            <span class="kw">elif</span> <span class="var">stack</span>[-<span class="nu">1</span>] == -<span class="var">a</span>: <span class="cm"># equal → both destroyed</span></span>
-      <span class="code-line" data-ln="9">                <span class="var">stack</span>.<span class="fn">pop</span>(); <span class="var">alive</span> = <span class="kw">False</span></span>
-      <span class="code-line" data-ln="10">            <span class="kw">else</span>:               <span class="cm"># top larger → current destroyed</span></span>
-      <span class="code-line" data-ln="11">                <span class="var">alive</span> = <span class="kw">False</span></span>
-      <span class="code-line" data-ln="12">        <span class="kw">if</span> <span class="var">alive</span>:</span>
-      <span class="code-line" data-ln="13">            <span class="var">stack</span>.<span class="fn">append</span>(<span class="var">a</span>)</span>
-      <span class="code-line" data-ln="14">    <span class="kw">return</span> <span class="var">stack</span></span>
+      <span class="code-line" data-ln="8">            <span class="kw">elif</span> <span class="var">diff</span> &gt; <span class="nu">0</span>:  <span class="cm"># current smaller → current destroyed</span></span>
+      <span class="code-line" data-ln="9">                <span class="var">a</span> = <span class="nu">0</span></span>
+      <span class="code-line" data-ln="10">            <span class="kw">else</span>:            <span class="cm"># equal → both destroyed</span></span>
+      <span class="code-line" data-ln="11">                <span class="var">a</span> = <span class="nu">0</span></span>
+      <span class="code-line" data-ln="12">                <span class="var">stack</span>.<span class="fn">pop</span>()</span>
+      <span class="code-line" data-ln="13">        <span class="kw">if</span> <span class="var">a</span>:</span>
+      <span class="code-line" data-ln="14">            <span class="var">stack</span>.<span class="fn">append</span>(<span class="var">a</span>)</span>
+      <span class="code-line" data-ln="15">    <span class="kw">return</span> <span class="var">stack</span></span>
     </div>
     <div class="vars-grid" id="vars-grid"></div>
   </div>
@@ -138,83 +139,86 @@ const STEPS = [
     asts: ASTEROIDS.map(v => ({ v, cls: 'normal' })),
     stack: [], action: 'none', actionLabel: '', collision: null,
     changes: [],
-    vars: { a: '—', alive: '—', stack: '[]' },
-    explain: 'Asteroids move through space. Positive = right (→), negative = left (←). Collision only happens when a right-moving asteroid is directly left of a left-moving one. Larger size wins; equal sizes both explode. The stack holds surviving right-moving asteroids. Input: [5, 10, −5, −10, −20, 7].'
+    vars: { a: '—', diff: '—', stack: '[]' },
+    explain: 'Asteroids move through space. Positive = right (→), negative = left (←). Collision only when a right-moving asteroid is directly left of a left-moving one. Larger size wins; equal sizes both explode. Key trick: diff = a + stack[-1]. If diff < 0, top destroyed. If diff > 0, a destroyed (set a=0 to exit while). If diff == 0, both destroyed. Input: [5, 10, −5, −10, −20, 7].'
   },
   {
-    phase: 'Step 2 — a=5 (→): positive, push  (line 13)',
-    ln: 13,
-    asts: ASTEROIDS.map((v,i) => ({ v, cls: i===0?'curr-pos': 'normal' })),
+    phase: 'Step 2 — a=5 (→): a not < 0, skip while, push  (line 14)',
+    ln: 14,
+    asts: ASTEROIDS.map((v,i) => ({ v, cls: i===0?'curr-pos':'normal' })),
     stack: [{ v:5, cls:'push' }], action: 'push', actionLabel: 'stack.append(5)  →  [5]', collision: null,
-    changes: [{ code:'stack.append(5)', was:'stack  →  []', now:'stack  →  [5]', why:'Positive asteroid moves right. alive=True, while condition: a < 0? No (5 > 0). Skip while. Push 5 onto stack.' }],
-    vars: { a:'5', alive:'True', stack:'[5]' },
-    explain: 'a=5 is positive (→). The while condition requires a < 0, so it is skipped entirely. alive stays True. Push 5 onto the stack.'
+    changes: [{ code:'stack.append(5)', was:'stack  →  []', now:'stack  →  [5]', why:'a=5 > 0 so while condition "a < 0" is false — loop skipped. "if a:" is truthy (5 ≠ 0), so push.' }],
+    vars: { a:'5', diff:'—', stack:'[5]' },
+    explain: 'a=5 is positive. While requires a < 0 — immediately false. "if a:" is True (5 is truthy). Push 5.'
   },
   {
-    phase: 'Step 3 — a=10 (→): positive, push  (line 13)',
-    ln: 13,
+    phase: 'Step 3 — a=10 (→): push  (line 14)',
+    ln: 14,
     asts: ASTEROIDS.map((v,i) => ({ v, cls: i===1?'curr-pos': i===0?'pos':'normal' })),
     stack: [{ v:5, cls:'normal' }, { v:10, cls:'push' }], action: 'push', actionLabel: 'stack.append(10)  →  [5, 10]', collision: null,
-    changes: [{ code:'stack.append(10)', was:'stack  →  [5]', now:'stack  →  [5, 10]', why:'Positive — no collision possible (both going right). Push 10.' }],
-    vars: { a:'10', alive:'True', stack:'[5, 10]' },
-    explain: 'a=10 is positive. Two right-moving asteroids never collide. Push 10. Stack = [5, 10].'
+    changes: [{ code:'stack.append(10)', was:'stack  →  [5]', now:'stack  →  [5, 10]', why:'Same logic. Positive asteroid, while skipped, push.' }],
+    vars: { a:'10', diff:'—', stack:'[5, 10]' },
+    explain: 'a=10 is positive. No collision possible between two right-movers. Push 10. Stack = [5, 10].'
   },
   {
-    phase: 'Step 4 — a=−5 (←): collision! 10 > 5 → −5 destroyed  (lines 5,10–11)',
-    ln: 11,
+    phase: 'Step 4 — a=−5 (←): diff=5 > 0 → a=0 (−5 destroyed)  (lines 4–5,8–9)',
+    ln: 9,
     asts: ASTEROIDS.map((v,i) => ({ v, cls: i===2?'curr-neg': i<2?'done':'normal' })),
     stack: [{ v:5, cls:'normal' }, { v:10, cls:'normal' }],
-    action: 'skip', actionLabel: '10 > |−5| → current asteroid −5 destroyed (alive=False)', collision: { title:'Collision: −5 hits 10', body:'|−5|=5 < 10. The stack top (10) is larger. −5 is destroyed. alive=False ends the while loop. Stack is unchanged.' },
-    changes: [{ code:'alive = False', was:'alive  →  True', now:'alive  →  False', why:'stack[-1]=10 > |-a|=5 (else branch). The right-moving 10 survives. −5 is annihilated. alive=False exits the while loop and skips the append.' }],
-    vars: { a:'−5', alive:'False', 'stack[-1]':'10', stack:'[5, 10]' },
-    explain: 'OPERATION ↷: a=−5, stack top=10. We check: is 10 < 5? No. Is 10 == 5? No. Else: 10 > 5, so −5 is destroyed. alive=False. The while exits and "if alive" is False — no push. Stack unchanged [5,10].'
+    action: 'skip', actionLabel: 'diff=−5+10=5 > 0 → a=0, −5 destroyed', collision: { title:'Collision: −5 hits 10', body:'diff = a + stack[-1] = −5 + 10 = 5. diff > 0 means the stack top (10) is bigger. Set a=0. While exits because a=0 is no longer < 0. "if a:" is False (0 is falsy) — no push.' },
+    changes: [{ code:'a = 0', was:'a  →  −5', now:'a  →  0', why:'diff=5 > 0: stack top is larger. Set a=0 to mark current asteroid as destroyed. a=0 also exits the while loop (0 < 0 is false). Elegant — no extra flag needed.' }],
+    vars: { a:'0 (was −5)', diff:'5', 'stack[-1]':'10', stack:'[5, 10]' },
+    explain: 'OPERATION ↷: diff = −5+10 = 5 > 0. Stack top wins. a=0. While exits (0 < 0 false). "if a:" → 0 is falsy → no push. Stack unchanged [5,10].'
   },
   {
-    phase: 'Step 5 — a=−10 (←): collision! 10 == 10 → both destroyed  (lines 5,8–9)',
-    ln: 9,
+    phase: 'Step 5 — a=−10 (←): diff=0 → both destroyed  (lines 4–5,10–12)',
+    ln: 12,
     asts: ASTEROIDS.map((v,i) => ({ v, cls: i===3?'curr-neg': i<3?'done':'normal' })),
     stack: [{ v:5, cls:'normal' }],
-    action: 'mutual', actionLabel: '10 == |−10| → MUTUAL DESTRUCTION (both pop)', collision: { title:'Collision: −10 hits 10', body:'|−10|=10 == stack top 10. Equal size — both destroyed. Pop 10 from stack. Set alive=False so −10 is not pushed either.' },
-    changes: [{ code:'stack.pop(); alive = False', was:'stack  →  [5, 10]', now:'stack  →  [5]', why:'stack[-1]=10 equals |-a|=10 (equal branch). Both asteroids annihilate. Pop 10, set alive=False. Neither survives.' }],
-    vars: { a:'−10', alive:'False', 'stack[-1] (popped)':'10', stack:'[5]' },
-    explain: 'OPERATION ↷: a=−10, stack top=10. Equal sizes — mutual destruction. Pop 10 from stack AND set alive=False so −10 is not pushed. Stack shrinks to [5].'
+    action: 'mutual', actionLabel: 'diff=−10+10=0 → a=0 AND stack.pop() (mutual destruction)', collision: { title:'Collision: −10 hits 10', body:'diff = −10 + 10 = 0. Equal sizes — both destroyed. Set a=0 AND pop 10. "if a:" is False — nothing pushed.' },
+    changes: [
+      { code:'a = 0', was:'a  →  −10', now:'a  →  0', why:'diff=0: equal sizes. Set a=0 to mark current as destroyed.' },
+      { code:'stack.pop()', was:'stack  →  [5, 10]', now:'stack  →  [5]', why:'Also pop the stack top (10). Both annihilate.' }
+    ],
+    vars: { a:'0 (was −10)', diff:'0', 'stack[-1] (popped)':'10', stack:'[5]' },
+    explain: 'OPERATION ↷: diff = −10+10 = 0. Mutual destruction. a=0 and pop 10. Stack = [5]. "if a:" → 0 is falsy → no push.'
   },
   {
-    phase: 'Step 6 — a=−20 (←): collision! 5 < 20 → pop 5  (lines 5–7)',
+    phase: 'Step 6 — a=−20 (←): diff=−15 < 0 → pop 5  (lines 4–5,6–7)',
     ln: 7,
     asts: ASTEROIDS.map((v,i) => ({ v, cls: i===4?'curr-neg': i<4?'done':'normal' })),
     stack: [],
-    action: 'pop', actionLabel: '5 < |−20| → pop 5 (destroyed)', collision: { title:'Collision: −20 hits 5', body:'|−20|=20 > 5. The incoming −20 is larger. Pop 5. Stack is now empty. The while loop checks again — stack is empty, so it exits. Since alive=True, push −20.' },
-    changes: [{ code:'stack.pop()', was:'stack  →  [5]', now:'stack  →  []', why:'stack[-1]=5 < |-a|=20 (first branch). Pop 5. While loop continues — but stack is now empty, so condition fails and loop exits.' }],
-    vars: { a:'−20', alive:'True', 'stack[-1] (popped)':'5', stack:'[]' },
-    explain: 'OPERATION ↷: a=−20, stack top=5. 5 < 20, so pop 5. Stack empties. While exits (stack empty). alive is still True — no one stopped −20. Push −20 next step.'
+    action: 'pop', actionLabel: 'diff=−20+5=−15 < 0 → pop 5, a stays −20', collision: { title:'Collision: −20 hits 5', body:'diff = −20 + 5 = −15 < 0. Incoming −20 is larger. Pop 5. a remains −20. While checks again — stack is now empty, exits. "if a:" → −20 is truthy → push −20.' },
+    changes: [{ code:'stack.pop()', was:'stack  →  [5]', now:'stack  →  []', why:'diff=−15 < 0: stack top is smaller. Pop it. a stays −20 (survives this round). While loops back — stack empty now, so exits.' }],
+    vars: { a:'−20', diff:'−15', 'stack[-1] (popped)':'5', stack:'[]' },
+    explain: 'OPERATION ↷: diff = −20+5 = −15 < 0. Pop 5 (smaller). a remains −20 — it is NOT zeroed. While exits (stack empty). "if a:" → −20 truthy → push next step.'
   },
   {
-    phase: 'Step 7 — push −20  (line 13)',
-    ln: 13,
+    phase: 'Step 7 — push −20  (line 14)',
+    ln: 14,
     asts: ASTEROIDS.map((v,i) => ({ v, cls: i===4?'curr-neg': i<4?'done':'normal' })),
     stack: [{ v:-20, cls:'push' }], action: 'push', actionLabel: 'stack.append(−20)  →  [−20]', collision: null,
-    changes: [{ code:'stack.append(−20)', was:'stack  →  []', now:'stack  →  [−20]', why:'Stack is empty — −20 has no right-moving asteroid to collide with. alive=True, so push −20. Negative asteroids can sit in the stack when there is nothing to the left.' }],
-    vars: { a:'−20', alive:'True', stack:'[−20]' },
-    explain: 'Stack emptied. −20 survives and is pushed. A negative asteroid can live in the stack — it only collides with a positive (right-moving) asteroid to its left, and there are none remaining.'
+    changes: [{ code:'stack.append(−20)', was:'stack  →  []', now:'stack  →  [−20]', why:'Stack was emptied by −20. "if a:" → −20 is truthy. Push. Negative asteroids can live in the stack — they only collide with positive values directly behind them.' }],
+    vars: { a:'−20', diff:'—', stack:'[−20]' },
+    explain: 'Stack empty after popping 5. "if a:" → −20 ≠ 0, push it. A negative asteroid survives when there are no right-moving asteroids left in the stack to collide with.'
   },
   {
-    phase: 'Step 8 — a=7 (→): no collision (top is −20, same direction impossible)  (line 13)',
-    ln: 13,
+    phase: 'Step 8 — a=7 (→): while skipped (a not < 0), push  (line 14)',
+    ln: 14,
     asts: ASTEROIDS.map((v,i) => ({ v, cls: i===5?'curr-pos': i<5?'done':'normal' })),
     stack: [{ v:-20, cls:'normal' }, { v:7, cls:'push' }], action: 'push', actionLabel: 'stack.append(7)  →  [−20, 7]', collision: null,
-    changes: [{ code:'stack.append(7)', was:'stack  →  [−20]', now:'stack  →  [−20, 7]', why:'While condition: a < 0 < stack[-1] requires both a to be negative AND stack top to be positive. Here a=7 (positive), so while is skipped. No collision possible.' }],
-    vars: { a:'7', alive:'True', stack:'[−20, 7]' },
-    explain: 'a=7 is positive. While condition requires a < 0 — false immediately. alive=True. Push 7. A right-moving asteroid behind a left-moving one will never catch it (they move apart). Stack = [−20, 7].'
+    changes: [{ code:'stack.append(7)', was:'stack  →  [−20]', now:'stack  →  [−20, 7]', why:'a=7 > 0 so "a < 0" is false — while skipped entirely. A right-moving asteroid behind a left-moving one moves away from it, not toward it. Push 7.' }],
+    vars: { a:'7', diff:'—', stack:'[−20, 7]' },
+    explain: 'a=7 positive. While requires a < 0 — false. Push 7. Stack = [−20, 7]. Note: stack[-1]=−20 is negative and a=7 is positive — they move away from each other, so no collision.'
   },
   {
-    phase: 'Step 9 — Result  (line 14)',
-    ln: 14,
+    phase: 'Step 9 — Result  (line 15)',
+    ln: 15,
     asts: ASTEROIDS.map(v => ({ v, cls: 'result' })),
     stack: [{ v:-20, cls:'normal' }, { v:7, cls:'normal' }], action: 'result', actionLabel: 'return stack', collision: null,
     changes: [],
     vars: { stack:'[−20, 7]', result:'[−20, 7]' },
-    explain: 'Loop ends. Return the stack as the final state. Result: [−20, 7]. The stack IS the answer — it contains all surviving asteroids in their original relative order. Time O(n): each asteroid pushed and popped at most once. Space O(n): stack up to size n.'
+    explain: 'Loop ends. Return the stack. Result: [−20, 7]. The "diff trick" is the key: diff = a + stack[-1] captures the net force. Negative diff → top destroyed. Positive diff → a destroyed (a=0 doubles as exit signal). Zero → both die. Each asteroid pushed and popped at most once → O(n) time and space.'
   }
 ];
 
