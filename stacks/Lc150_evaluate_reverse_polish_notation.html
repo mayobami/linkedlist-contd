@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LC 150 — Evaluate Reverse Polish Notation</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0d1117; color: #c9d1d9; font-family: 'Consolas','Monaco',monospace; min-height: 100vh; display: flex; flex-direction: column; }
+header { padding: 16px 28px; border-bottom: 1px solid #30363d; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+header h1 { font-size: 1.15rem; color: #e6edf3; }
+.badge { padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+.medium { background: #3d2b00; color: #ffa657; }
+.time-badge { background: #0c1f3d; color: #58a6ff; }
+.space-badge { background: #1b1327; color: #d2a8ff; }
+#progress { height: 3px; background: #21262d; flex-shrink: 0; }
+#progress-bar { height: 3px; background: #58a6ff; transition: width 0.25s; }
+main { display: grid; grid-template-columns: 1fr 1fr; flex: 1; min-height: 0; }
+.panel { border-right: 1px solid #30363d; padding: 18px 22px; overflow-y: auto; }
+.panel:last-child { border-right: none; }
+.phase-pill { display: inline-block; background: #21262d; color: #58a6ff; border: 1px solid #30363d; border-radius: 20px; padding: 4px 14px; font-size: 0.78rem; margin-bottom: 14px; }
+.sec-label { font-size: 0.72rem; color: #6e7681; margin-bottom: 6px; letter-spacing: 0.03em; }
+.tok-strip { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+.tok-cell { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.tok-box { padding: 6px 12px; border: 1px solid #30363d; border-radius: 6px; font-size: 0.92rem; font-weight: 700; background: #161b22; color: #8b949e; min-width: 38px; text-align: center; transition: all 0.15s; }
+.tok-box.t-num  { border-color: #1f6feb; background: #0c1f3d; color: #58a6ff; }
+.tok-box.t-op   { border-color: #ffa657; background: #2d1a00; color: #ffa657; }
+.tok-box.t-curr-num { border-color: #238636; background: #12261e; color: #56d364; box-shadow: 0 0 8px #23863640; }
+.tok-box.t-curr-op  { border-color: #da3633; background: #2d1317; color: #da3633; box-shadow: 0 0 8px #da363340; }
+.tok-box.t-done { border-color: #21262d; background: #0d1117; color: #484f58; }
+.tok-box.t-result { border-color: #8957e5; background: #1b1327; color: #d2a8ff; }
+.tok-idx { font-size: 0.62rem; color: #484f58; }
+.op-callout { background: #2d1a00; border: 1px solid #ffa657; border-radius: 8px; padding: 10px 14px; margin: 8px 0 12px; font-size: 0.82rem; }
+.op-title { color: #ffa657; font-weight: 700; margin-bottom: 4px; }
+.op-body  { color: #c9d1d9; }
+.op-body .pop-a { color: #d2a8ff; font-weight: 700; }
+.op-body .pop-b { color: #58a6ff; font-weight: 700; }
+.op-body .push-r { color: #56d364; font-weight: 700; }
+.action-row { margin: 8px 0 12px; }
+.action-badge { display: inline-flex; align-items: center; gap: 8px; padding: 5px 16px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; }
+.act-push   { background: #0d2b0d; color: #56d364; border: 1px solid #238636; }
+.act-pop    { background: #2d1317; color: #da3633; border: 1px solid #da3633; }
+.act-calc   { background: #2d1a00; color: #ffa657; border: 1px solid #ffa657; }
+.act-result { background: #1b1327; color: #d2a8ff; border: 1px solid #8957e5; }
+.act-none   { background: #161b22; color: #8b949e; border: 1px solid #30363d; }
+.stack-label { font-size: 0.72rem; color: #6e7681; margin-bottom: 8px; }
+.stack-container { display: flex; flex-direction: column; gap: 6px; min-height: 28px; margin-bottom: 14px; }
+.stack-empty { font-size: 0.82rem; color: #484f58; font-style: italic; }
+.stack-item { padding: 7px 14px; border: 1px solid #30363d; border-radius: 6px; font-size: 0.88rem; background: #161b22; color: #c9d1d9; display: flex; align-items: center; justify-content: space-between; }
+.stack-item.t-push  { border-color: #238636; background: #12261e; color: #56d364; box-shadow: 0 0 8px #23863640; }
+.stack-item.t-pop-a { border-color: #8957e5; background: #1b1327; color: #d2a8ff; text-decoration: line-through; opacity: 0.7; }
+.stack-item.t-pop-b { border-color: #1f6feb; background: #0c1f3d; color: #58a6ff; text-decoration: line-through; opacity: 0.7; }
+.stack-tag { font-size: 0.63rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; margin-left: 8px; }
+.tag-push { background: #238636; color: #fff; }
+.tag-a    { background: #8957e5; color: #fff; }
+.tag-b    { background: #1f6feb; color: #fff; }
+.tag-top  { background: #484f58; color: #fff; }
+.changes-panel { border: 1px solid #30363d; border-radius: 8px; padding: 12px 16px; margin-top: 10px; background: #0d1117; }
+.changes-title { font-size: 0.7rem; color: #8b949e; font-weight: 600; margin-bottom: 8px; letter-spacing: 0.05em; }
+.no-change { font-size: 0.8rem; color: #484f58; font-style: italic; }
+.change-row { border-left: 3px solid #ffa657; padding-left: 10px; margin-bottom: 10px; }
+.change-row:last-child { margin-bottom: 0; }
+.change-code { font-size: 0.82rem; color: #ffa657; font-weight: 700; margin-bottom: 3px; }
+.change-was  { font-size: 0.77rem; color: #8b949e; }
+.change-was span { text-decoration: line-through; color: #da3633; }
+.change-now  { font-size: 0.77rem; color: #8b949e; }
+.change-now span { color: #56d364; font-weight: 700; }
+.change-why  { font-size: 0.77rem; color: #6e7681; margin-top: 3px; font-style: italic; }
+.result-box { margin-top: 12px; padding: 12px 18px; background: #1b1327; border: 2px solid #8957e5; border-radius: 8px; text-align: center; color: #d2a8ff; font-size: 1rem; font-weight: 700; }
+.legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #21262d; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.7rem; color: #8b949e; }
+.leg-dot { width: 13px; height: 13px; border-radius: 3px; flex-shrink: 0; }
+.code-block { background: #0d1117; border: 1px solid #21262d; border-radius: 8px; padding: 14px; font-size: 0.83rem; line-height: 1.85; overflow-x: auto; margin-bottom: 14px; }
+.code-line { display: block; padding: 1px 6px; border-radius: 4px; white-space: pre; }
+.code-line.active { background: #1f2d1f; border-left: 3px solid #56d364; margin-left: -6px; padding-left: 3px; }
+.kw { color: #ff7b72; } .fn { color: #d2a8ff; } .cm { color: #8b949e; font-style: italic; } .nu { color: #79c0ff; } .var { color: #e6edf3; } .st { color: #a5d6ff; }
+.vars-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; margin-bottom: 14px; }
+.var-cell { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 8px 12px; }
+.var-name { font-size: 0.67rem; color: #6e7681; margin-bottom: 2px; }
+.var-val  { font-size: 0.82rem; color: #e6edf3; font-weight: 600; word-break: break-all; }
+footer { border-top: 1px solid #30363d; padding: 10px 28px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+.btn { background: #21262d; border: 1px solid #30363d; color: #c9d1d9; padding: 6px 20px; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 0.85rem; }
+.btn:hover:not(:disabled) { background: #30363d; }
+.btn:disabled { opacity: 0.35; cursor: default; }
+#explain { flex: 1; font-size: 0.82rem; color: #8b949e; line-height: 1.5; }
+#step-counter { font-size: 0.78rem; color: #6e7681; white-space: nowrap; }
+.key-hint { text-align: center; font-size: 0.67rem; color: #484f58; padding: 4px; border-top: 1px solid #21262d; flex-shrink: 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>LC 150 — Evaluate Reverse Polish Notation</h1>
+  <span class="badge medium">Medium</span>
+  <span class="badge time-badge">Time O(n)</span>
+  <span class="badge space-badge">Space O(n)</span>
+</header>
+<div id="progress"><div id="progress-bar"></div></div>
+<main>
+  <div class="panel">
+    <div id="phase-pill" class="phase-pill"></div>
+    <div id="viz-content"></div>
+  </div>
+  <div class="panel">
+    <div class="code-block">
+      <span class="code-line" data-ln="1"><span class="kw">def</span> <span class="fn">evalRPN</span>(<span class="var">self</span>, <span class="var">tokens</span>):</span>
+      <span class="code-line" data-ln="2">    <span class="var">stack</span> = []</span>
+      <span class="code-line" data-ln="3">    <span class="kw">for</span> <span class="var">tok</span> <span class="kw">in</span> <span class="var">tokens</span>:</span>
+      <span class="code-line" data-ln="4">        <span class="kw">if</span> <span class="var">tok</span> <span class="kw">in</span> <span class="st">'+-*/'</span>:</span>
+      <span class="code-line" data-ln="5">            <span class="var">b</span> = <span class="var">stack</span>.<span class="fn">pop</span>()  <span class="cm"># top  (pushed last)</span></span>
+      <span class="code-line" data-ln="6">            <span class="var">a</span> = <span class="var">stack</span>.<span class="fn">pop</span>()  <span class="cm"># below (pushed first)</span></span>
+      <span class="code-line" data-ln="7">            <span class="kw">if</span>   <span class="var">tok</span> == <span class="st">'+'</span>: <span class="var">stack</span>.<span class="fn">append</span>(<span class="var">a</span> + <span class="var">b</span>)</span>
+      <span class="code-line" data-ln="8">            <span class="kw">elif</span> <span class="var">tok</span> == <span class="st">'-'</span>: <span class="var">stack</span>.<span class="fn">append</span>(<span class="var">a</span> - <span class="var">b</span>)</span>
+      <span class="code-line" data-ln="9">            <span class="kw">elif</span> <span class="var">tok</span> == <span class="st">'*'</span>: <span class="var">stack</span>.<span class="fn">append</span>(<span class="var">a</span> * <span class="var">b</span>)</span>
+      <span class="code-line" data-ln="10">            <span class="kw">else</span>:            <span class="var">stack</span>.<span class="fn">append</span>(<span class="fn">int</span>(<span class="var">a</span> / <span class="var">b</span>))</span>
+      <span class="code-line" data-ln="11">        <span class="kw">else</span>:</span>
+      <span class="code-line" data-ln="12">            <span class="var">stack</span>.<span class="fn">append</span>(<span class="fn">int</span>(<span class="var">tok</span>))</span>
+      <span class="code-line" data-ln="13">    <span class="kw">return</span> <span class="var">stack</span>[<span class="nu">0</span>]</span>
+    </div>
+    <div class="vars-grid" id="vars-grid"></div>
+  </div>
+</main>
+<footer>
+  <button class="btn" id="btn-prev" onclick="go(-1)">← Prev</button>
+  <div id="explain"></div>
+  <span id="step-counter"></span>
+  <button class="btn" id="btn-next" onclick="go(1)">Next →</button>
+</footer>
+<div class="key-hint">keyboard: ← → arrow keys</div>
+<script>
+// tokens = ["5","1","2","+","4","*","+","3","-"]
+// expression = 5 + ((1+2)*4) - 3 = 14
+
+const TOKENS = ["5","1","2","+","4","*","+","3","-"];
+
+const STEPS = [
+  {
+    phase: 'Step 1 — Problem Setup  (line 1)',
+    ln: 1,
+    toks: TOKENS.map(t => ({ t, cls: 'normal' })),
+    stack: [], op: null, action: 'none', actionLabel: '',
+    changes: [],
+    vars: { tok: '—', a: '—', b: '—', stack: '[]' },
+    explain: 'Reverse Polish Notation (RPN) puts the operator AFTER its operands: "1 2 +" means 1+2. Rule: number → push onto stack. Operator → pop two numbers (b = top, a = below), compute, push result. The stack naturally handles operator precedence without any parentheses or precedence rules. Expression: 5 + ((1+2)*4) - 3 = 14.'
+  },
+  {
+    phase: 'Step 2 — tok="5": number → push  (line 12)',
+    ln: 12,
+    toks: TOKENS.map((t,i) => ({ t, cls: i===0?'curr-num': 'normal' })),
+    stack: [{ v:5, cls:'push' }], op: null, action: 'push', actionLabel: 'stack.append(5)  →  [5]',
+    changes: [{ code:'stack.append(int("5"))', was:'stack  →  []', now:'stack  →  [5]', why: '"5" is not in "+-*/" so it is a number. Push int("5")=5.' }],
+    vars: { tok: '"5"', a: '—', b: '—', stack: '[5]' },
+    explain: 'tok="5" is a number. Push 5. Stack = [5].'
+  },
+  {
+    phase: 'Step 3 — tok="1": number → push  (line 12)',
+    ln: 12,
+    toks: TOKENS.map((t,i) => ({ t, cls: i===1?'curr-num': i<1?'done': 'normal' })),
+    stack: [{ v:5, cls:'normal' }, { v:1, cls:'push' }], op: null, action: 'push', actionLabel: 'stack.append(1)  →  [5, 1]',
+    changes: [{ code:'stack.append(int("1"))', was:'stack  →  [5]', now:'stack  →  [5, 1]', why:'Number token. Push 1.' }],
+    vars: { tok: '"1"', a: '—', b: '—', stack: '[5, 1]' },
+    explain: 'tok="1" is a number. Push 1. Stack = [5, 1].'
+  },
+  {
+    phase: 'Step 4 — tok="2": number → push  (line 12)',
+    ln: 12,
+    toks: TOKENS.map((t,i) => ({ t, cls: i===2?'curr-num': i<2?'done': 'normal' })),
+    stack: [{ v:5, cls:'normal' }, { v:1, cls:'normal' }, { v:2, cls:'push' }], op: null, action: 'push', actionLabel: 'stack.append(2)  →  [5, 1, 2]',
+    changes: [{ code:'stack.append(int("2"))', was:'stack  →  [5, 1]', now:'stack  →  [5, 1, 2]', why:'Number token. Push 2.' }],
+    vars: { tok: '"2"', a: '—', b: '—', stack: '[5, 1, 2]' },
+    explain: 'tok="2" is a number. Push 2. Stack = [5, 1, 2].'
+  },
+  {
+    phase: 'Step 5 — tok="+": pop b=2, pop a=1, push a+b=3  (lines 5–7)',
+    ln: 7,
+    toks: TOKENS.map((t,i) => ({ t, cls: i===3?'curr-op': i<3?'done': 'normal' })),
+    stack: [{ v:5, cls:'normal' }, { v:3, cls:'push' }],
+    op: { title:'Operation: 1 + 2', body:'b = stack.pop() = 2  (top, pushed last)\na = stack.pop() = 1  (below, pushed first)\nresult = a + b = 1 + 2 = 3\nstack.append(3)' },
+    action: 'calc', actionLabel: 'b=2, a=1  →  push a+b = 3',
+    changes: [
+      { code:'b = stack.pop()', was:'stack  →  [5, 1, 2]', now:'b = 2  (top)', why:'Pop the TOP first — this is the RIGHT operand (b).' },
+      { code:'a = stack.pop()', was:'stack  →  [5, 1]', now:'a = 1  (next)', why:'Pop again — this is the LEFT operand (a). Order matters for subtraction and division.' },
+      { code:'stack.append(a + b)', was:'stack  →  [5]', now:'stack  →  [5, 3]', why:'Push result 1+2=3. The two operands are replaced by one result.' }
+    ],
+    vars: { tok: '"+"', b: '2 (top)', a: '1', 'a+b': '3', stack: '[5, 3]' },
+    explain: 'OPERATION ↷: tok="+". Pop b=2 (top), pop a=1. Push a+b=3. Critical: b is popped FIRST (it was on top), a is popped SECOND. So the expression is a OP b, not b OP a.'
+  },
+  {
+    phase: 'Step 6 — tok="4": number → push  (line 12)',
+    ln: 12,
+    toks: TOKENS.map((t,i) => ({ t, cls: i===4?'curr-num': i<4?'done': 'normal' })),
+    stack: [{ v:5, cls:'normal' }, { v:3, cls:'normal' }, { v:4, cls:'push' }], op: null, action: 'push', actionLabel: 'stack.append(4)  →  [5, 3, 4]',
+    changes: [{ code:'stack.append(int("4"))', was:'stack  →  [5, 3]', now:'stack  →  [5, 3, 4]', why:'Number token. Push 4.' }],
+    vars: { tok: '"4"', a: '—', b: '—', stack: '[5, 3, 4]' },
+    explain: 'tok="4" is a number. Push 4. Stack = [5, 3, 4].'
+  },
+  {
+    phase: 'Step 7 — tok="*": pop b=4, pop a=3, push a*b=12  (lines 5–6,9)',
+    ln: 9,
+    toks: TOKENS.map((t,i) => ({ t, cls: i===5?'curr-op': i<5?'done': 'normal' })),
+    stack: [{ v:5, cls:'normal' }, { v:12, cls:'push' }],
+    op: { title:'Operation: 3 * 4', body:'b = stack.pop() = 4\na = stack.pop() = 3\nresult = a * b = 12\nstack.append(12)' },
+    action: 'calc', actionLabel: 'b=4, a=3  →  push a*b = 12',
+    changes: [
+      { code:'b = stack.pop()  →  4', was:'stack  →  [5, 3, 4]', now:'b = 4', why:'Pop top = 4 (b, right operand).' },
+      { code:'a = stack.pop()  →  3', was:'stack  →  [5, 3]', now:'a = 3', why:'Pop again = 3 (a, left operand).' },
+      { code:'stack.append(a * b)', was:'stack  →  [5]', now:'stack  →  [5, 12]', why:'Push 3*4=12.' }
+    ],
+    vars: { tok: '"*"', b: '4 (top)', a: '3', 'a*b': '12', stack: '[5, 12]' },
+    explain: 'OPERATION ↷: tok="*". Pop b=4, pop a=3. Push 3*4=12. Stack = [5, 12]. So far we have computed (1+2)*4 = 12, sitting next to the 5.'
+  },
+  {
+    phase: 'Step 8 — tok="+": pop b=12, pop a=5, push a+b=17  (lines 5–7)',
+    ln: 7,
+    toks: TOKENS.map((t,i) => ({ t, cls: i===6?'curr-op': i<6?'done': 'normal' })),
+    stack: [{ v:17, cls:'push' }],
+    op: { title:'Operation: 5 + 12', body:'b = stack.pop() = 12\na = stack.pop() = 5\nresult = a + b = 17\nstack.append(17)' },
+    action: 'calc', actionLabel: 'b=12, a=5  →  push a+b = 17',
+    changes: [
+      { code:'b = stack.pop()  →  12', was:'stack  →  [5, 12]', now:'b = 12', why:'Pop top = 12.' },
+      { code:'a = stack.pop()  →  5', was:'stack  →  [5]', now:'a = 5', why:'Pop again = 5.' },
+      { code:'stack.append(a + b)', was:'stack  →  []', now:'stack  →  [17]', why:'Push 5+12=17. Stack now has one element.' }
+    ],
+    vars: { tok: '"+"', b: '12 (top)', a: '5', 'a+b': '17', stack: '[17]' },
+    explain: 'OPERATION ↷: tok="+". Pop b=12, pop a=5. Push 5+12=17. Stack = [17]. We have computed 5 + (1+2)*4 = 17. One more token to go.'
+  },
+  {
+    phase: 'Step 9 — tok="3": number → push  (line 12)',
+    ln: 12,
+    toks: TOKENS.map((t,i) => ({ t, cls: i===7?'curr-num': i<7?'done': 'normal' })),
+    stack: [{ v:17, cls:'normal' }, { v:3, cls:'push' }], op: null, action: 'push', actionLabel: 'stack.append(3)  →  [17, 3]',
+    changes: [{ code:'stack.append(int("3"))', was:'stack  →  [17]', now:'stack  →  [17, 3]', why:'Number token. Push 3.' }],
+    vars: { tok: '"3"', a: '—', b: '—', stack: '[17, 3]' },
+    explain: 'tok="3" is a number. Push 3. Stack = [17, 3].'
+  },
+  {
+    phase: 'Step 10 — tok="-": pop b=3, pop a=17, push a-b=14  (lines 5–6,8)',
+    ln: 8,
+    toks: TOKENS.map((t,i) => ({ t, cls: i===8?'curr-op': 'done' })),
+    stack: [{ v:14, cls:'push' }],
+    op: { title:'Operation: 17 - 3', body:'b = stack.pop() = 3\na = stack.pop() = 17\nresult = a - b = 14\nstack.append(14)' },
+    action: 'calc', actionLabel: 'b=3, a=17  →  push a-b = 14',
+    changes: [
+      { code:'b = stack.pop()  →  3', was:'stack  →  [17, 3]', now:'b = 3', why:'Pop top = 3 (right operand for subtraction).' },
+      { code:'a = stack.pop()  →  17', was:'stack  →  [17]', now:'a = 17', why:'Pop again = 17 (left operand). For "-", order matters: a-b = 17-3, not 3-17.' },
+      { code:'stack.append(a - b)', was:'stack  →  []', now:'stack  →  [14]', why:'Push 17-3=14. Stack has exactly one element — the final answer.' }
+    ],
+    vars: { tok: '"-"', b: '3 (top)', a: '17', 'a-b': '14', stack: '[14]' },
+    explain: 'OPERATION ↷: tok="-". Pop b=3, pop a=17. Push 17-3=14. This is why order matters: b is popped FIRST (it goes on the RIGHT of the operator). If you swapped it you\'d get 3-17=-14.'
+  },
+  {
+    phase: 'Step 11 — return stack[0] = 14  (line 13)',
+    ln: 13,
+    toks: TOKENS.map(t => ({ t, cls: 'done' })),
+    stack: [{ v:14, cls:'push' }], op: null, action: 'result', actionLabel: 'return stack[0] = 14',
+    changes: [],
+    vars: { result: '14', 'expression': '5+((1+2)*4)-3' },
+    explain: 'Loop ends. stack[0]=14. A valid RPN expression always leaves exactly one element on the stack — the final result. 5 + ((1+2)*4) - 3 = 5 + 12 - 3 = 14. Time O(n): one pass, each token processed once. Space O(n): stack holds at most n/2 numbers.'
+  }
+];
+
+let cur = 0;
+
+function render() {
+  const s = STEPS[cur];
+  document.getElementById('phase-pill').textContent = s.phase;
+  let html = '';
+
+  html += `<div class="sec-label">tokens[]</div><div class="tok-strip">`;
+  s.toks.forEach((t,i) => {
+    const isOp = '+-*/'.includes(t.t);
+    const cls = { 'curr-num':'t-curr-num','curr-op':'t-curr-op','done':'t-done','normal': isOp?'t-op':'t-num' }[t.cls]||'';
+    html += `<div class="tok-cell"><div class="tok-box ${cls}">${t.t}</div><div class="tok-idx">[${i}]</div></div>`;
+  });
+  html += '</div>';
+
+  if (s.op) {
+    html += `<div class="op-callout"><div class="op-title">⚙ ${s.op.title}</div><div class="op-body" style="white-space:pre">${s.op.body}</div></div>`;
+  }
+
+  if (s.action !== 'none') {
+    const cls = {push:'act-push',calc:'act-calc',result:'act-result'}[s.action]||'act-none';
+    const icon = {push:'↑',calc:'⚙',result:'✓'}[s.action]||'';
+    html += `<div class="action-row"><span class="action-badge ${cls}">${icon}&nbsp;&nbsp;${s.actionLabel}</span></div>`;
+  }
+
+  html += `<div class="stack-label">Stack — numbers (top → bottom)</div><div class="stack-container">`;
+  if (s.stack.length === 0) {
+    html += '<span class="stack-empty">[ empty ]</span>';
+  } else {
+    for (let i = s.stack.length-1; i >= 0; i--) {
+      const item = s.stack[i];
+      const isTop = i === s.stack.length-1;
+      const cls = item.cls==='push'?'t-push': item.cls==='pop-a'?'t-pop-a': item.cls==='pop-b'?'t-pop-b':'';
+      const tag = item.cls==='push' ? '<span class="stack-tag tag-push">pushed</span>'
+                : item.cls==='pop-a' ? '<span class="stack-tag tag-a">a</span>'
+                : item.cls==='pop-b' ? '<span class="stack-tag tag-b">b (top)</span>'
+                : isTop ? '<span class="stack-tag tag-top">top</span>' : '';
+      html += `<div class="stack-item ${cls}">${item.v}${tag}</div>`;
+    }
+  }
+  html += '</div>';
+
+  if (s.action === 'result') {
+    html += `<div class="result-box">✓ &nbsp; 14</div>`;
+  }
+
+  if (!s.changes || s.changes.length === 0) {
+    html += `<div class="changes-panel"><div class="changes-title">↷ STACK OPERATIONS THIS STEP</div><div class="no-change">No stack mutation this step.</div></div>`;
+  } else {
+    const rows = s.changes.map(c => `<div class="change-row">
+      <div class="change-code">${c.code}</div>
+      <div class="change-was">was: <span>${c.was}</span></div>
+      <div class="change-now">now: <span>${c.now}</span></div>
+      <div class="change-why">${c.why}</div>
+    </div>`).join('');
+    html += `<div class="changes-panel"><div class="changes-title">↷ STACK OPERATION THIS STEP</div>${rows}</div>`;
+  }
+
+  html += `<div class="legend">
+    <div class="legend-item"><div class="leg-dot" style="background:#12261e;border:1px solid #238636"></div>Current number</div>
+    <div class="legend-item"><div class="leg-dot" style="background:#2d1317;border:1px solid #da3633"></div>Current operator</div>
+    <div class="legend-item"><div class="leg-dot" style="background:#0c1f3d;border:1px solid #1f6feb"></div>Number token</div>
+    <div class="legend-item"><div class="leg-dot" style="background:#2d1a00;border:1px solid #ffa657"></div>Operator token</div>
+  </div>`;
+
+  document.getElementById('viz-content').innerHTML = html;
+  document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active'));
+  const active = document.querySelector(`.code-line[data-ln="${s.ln}"]`);
+  if (active) active.classList.add('active');
+  document.getElementById('vars-grid').innerHTML = Object.entries(s.vars).map(([k,v]) =>
+    `<div class="var-cell"><div class="var-name">${k}</div><div class="var-val">${v}</div></div>`).join('');
+  document.getElementById('explain').textContent = s.explain;
+  document.getElementById('step-counter').textContent = `${cur+1} / ${STEPS.length}`;
+  document.getElementById('progress-bar').style.width = ((cur+1)/STEPS.length*100)+'%';
+  document.getElementById('btn-prev').disabled = cur===0;
+  document.getElementById('btn-next').disabled = cur===STEPS.length-1;
+}
+
+function go(dir) {
+  const next = cur+dir;
+  if (next>=0 && next<STEPS.length) { cur=next; render(); }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key==='ArrowRight'||e.key==='ArrowDown') go(1);
+  if (e.key==='ArrowLeft' ||e.key==='ArrowUp')   go(-1);
+});
+
+render();
+</script>
+</body>
+</html>
