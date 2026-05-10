@@ -11,15 +11,25 @@ You are a **senior software engineer teaching LeetCode**. Every response should 
 ```
 linkedlist-contd/
 ├── CLAUDE.md
+├── README.md                                ← project index (all problems, all links)
 ├── skilld.md
-├── LC{number}_{Problem_Name}_Readme.md      ← one per problem, root level
-└── artifacts/
-    └── Lc{number}_{problem_name}.html       ← one per problem, lowercase snake_case
+├── LC{number}_{Problem_Name}_Readme.md      ← legacy linked-list READMEs, root level
+├── artifacts/
+│   └── Lc{number}_{problem_name}.html       ← linked-list visualizers
+├── Doubly linked/
+│   ├── LC{number}_{Name}_DLL_Readme.md      ← DLL problem READMEs
+│   └── Lc{number}_{name}_dll.html           ← DLL visualizers
+└── stacks/
+    ├── Lc{number}_{problem_name}.html        ← stack visualizers
+    └── explanations/
+        └── LC{number}_{Problem_Name}.md      ← stack interview READMEs (new format)
 ```
 
 **Naming conventions:**
-- README: `LC92_Reverse_Linked_List_II_Readme.md`
-- HTML:   `artifacts/Lc92_reverse_linked_list_ii.html`
+- Legacy README (root): `LC92_Reverse_Linked_List_II_Readme.md`
+- Legacy HTML (artifacts): `artifacts/Lc92_reverse_linked_list_ii.html`
+- Stack HTML: `stacks/Lc71_simplify_path.html`
+- Stack README: `stacks/explanations/LC71_Simplify_Path.md`
 
 ---
 
@@ -28,38 +38,74 @@ linkedlist-contd/
 Every README must follow this exact section order:
 
 ```markdown
-# LeetCode {number} — {Problem Title}
+# LC {number} — {Problem Title}
 
-## Problem
+## Problem Summary
 {one-paragraph summary}
 
 **Example:**
-```
 Input:  ...
 Output: ...
-```
 
 ---
 
-## Interview Strategy
+## Interview Answer
 
-### Clarifying Questions to Ask
-- ...
+### Step 1 — Read & Restate (~30 seconds)
+Read the problem silently, then say:
+> "So the problem is asking me to [restate in one sentence]..."
 
-### How to Talk Through It
-> "..." (a script the candidate speaks aloud)
+### Step 2 — Ask Clarifying Questions (~1 minute)
+> "Before I start, a few questions."
+- "Can the input be empty or null?"
+- "Are there negative numbers / duplicates?"
+- "Should I optimize for time or space?"
 
-### Algorithm Steps
+### Step 3 — Think Out Loud with Brute Force First (~1 minute)
+> "The brute force would be to... which gives O(n²). But we can do better."
+
+### Step 4 — State the Optimal Approach (~1 minute)
+> "My approach is to use a [stack/hashmap/DP array] because..."
+
+### Step 5 — State Complexity Before Coding (~30 seconds)
+> "This will be O(n) time and O(n) space because..."
+
+### Step 6 — Code with Narration (~5–8 minutes)
+> "Here I initialize the stack..."
+> "This while loop pops everything smaller than the current value..."
+> "Finally I push and return..."
+
+### Step 7 — Dry Run Your Code (~2 minutes)
+> "Let me trace through with [example]. At step 1, [variable] = [value]..."
+
+### Step 8 — Handle Edge Cases (~1 minute)
+> "If the input is empty, my code returns [X] because [Y]..."
+
+---
+
+## Mental Model / Intuition
+{plain-English explanation of WHY the data structure fits this problem}
+
+---
+
+## Approach
 1. ...
 
-### Solution (Python)
+---
+
+## Code
 ```python
 ...
 ```
 
 ---
 
-## Complexity
+## Step-by-Step Walkthrough
+{table or numbered trace through the example}
+
+---
+
+## Complexity Table
 
 | | Complexity | Reason |
 |---|---|---|
@@ -68,22 +114,19 @@ Output: ...
 
 ---
 
-## Edge Cases
-| Case | Behavior |
-|---|---|
-| ... | ... ✓ |
+## Comparison Table (if multiple approaches exist)
+
+| Approach | Time | Space | Notes |
+|----------|------|-------|-------|
+| Brute force | O(n²) | O(1) | ... |
+| Optimal | O(n) | O(n) | ... |
 
 ---
 
-## Follow-up Questions
+## Follow-Up Questions
 
 **Q: ...**
 ...
-
----
-
-## Key Insight
-{one paragraph: the single most important thing to understand about this problem}
 ```
 
 ---
@@ -265,13 +308,23 @@ GitHub Pages serves from root of `main` branch (or `docs/` if configured).
 
 After creating files:
 ```
+# For stack problems:
+git add stacks/Lc{number}_{name}.html stacks/explanations/LC{number}_{Name}.md
+git commit -m "Add LC{number} {Problem Title} stack visualizer and readme"
+git push origin main
+
+# For legacy linked-list problems:
 git add LC{number}_{Name}_Readme.md artifacts/Lc{number}_{name}.html
 git commit -m "Add LC{number} {Problem Title} readme and visualizer"
 git push origin main
 ```
 
-Live HTML URL (once GitHub Pages is enabled on the repo):
+Live HTML URLs (once GitHub Pages is enabled on the repo):
 ```
+# Stack visualizers:
+https://mayobami.github.io/linkedlist-contd/stacks/Lc{number}_{name}.html
+
+# Legacy linked-list visualizers:
 https://mayobami.github.io/linkedlist-contd/artifacts/Lc{number}_{name}.html
 ```
 
@@ -280,11 +333,13 @@ https://mayobami.github.io/linkedlist-contd/artifacts/Lc{number}_{name}.html
 ## Quality Checklist
 
 Before finishing any problem, verify:
-- [ ] README has all 7 sections in order
+- [ ] README has all sections in order (Problem Summary → Interview Answer 8 steps → Mental Model → Approach → Code → Walkthrough → Complexity → Comparison → Follow-Ups)
 - [ ] HTML renders correctly: both panels visible, nodes display, Next/Prev work, keyboard nav works
 - [ ] Every code line that's referenced in a step has a matching `data-ln` attribute
 - [ ] `explain` field for each step is at least 1 full sentence with *why*, not just *what*
+- [ ] `.code-line` CSS includes `white-space: pre` so Python indentation renders correctly
 - [ ] Difficulty badge color matches the actual LeetCode difficulty
 - [ ] Time and space complexity badges are correct
 - [ ] File names follow the naming convention exactly
+- [ ] Root README.md updated with the new problem entry
 - [ ] Files are pushed to `origin main`
